@@ -1,0 +1,17 @@
+{
+  "name": "sfqs-design-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SFQS design tokens, style guide, and their automated checks",
+  "scripts": {
+    "tokens:build": "node scripts/generate-tokens.cjs --config tokens.json -o tokens.css",
+    "tokens:check": "node scripts/check-tokens-fresh.mjs",
+    "contrast:check": "python scripts/check-contrast.py",
+    "a11y:check": "node scripts/a11y-check.mjs",
+    "check": "npm run tokens:check && npm run contrast:check && npm run a11y:check"
+  },
+  "devDependencies": {
+    "axe-core": "^4.13.0",
+    "puppeteer": "^25.0.0"
+  }
+}

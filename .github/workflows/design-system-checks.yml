@@ -1,0 +1,45 @@
+name: Design system checks
+
+on:
+  push:
+    paths:
+      - "tokens.json"
+      - "tokens.css"
+      - "style-guide.html"
+      - "scripts/**"
+      - "package.json"
+      - ".github/workflows/design-system-checks.yml"
+  pull_request:
+    paths:
+      - "tokens.json"
+      - "tokens.css"
+      - "style-guide.html"
+      - "scripts/**"
+      - "package.json"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: tokens.css matches tokens.json
+        run: npm run tokens:check
+
+      - name: WCAG AA contrast (light + dark)
+        run: npm run contrast:check
+
+      - name: axe-core accessibility audit (light + dark)
+        run: npm run a11y:check
