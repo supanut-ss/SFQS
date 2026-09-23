@@ -82,3 +82,7 @@ Pill shape (`radius.full`), `fontSize.xs`, bold 600. คู่สี bg-อ่�
 - `tokens.css` — generated CSS custom properties
 - `style-guide.html` — browsable style guide: primitive/semantic colors, type scale, spacing, radius, shadow, base components (button/input/card) + freight-specific components (badges, incoterms table, FCL vs LCL comparison, instant quote form, shipment tracking card)
 - `design-system-spec.md` — this document
+- `assets/logo.webp` — official Freito logo (full lockup: icon + wordmark + tagline)
+- `assets/logo-icon.png` / `assets/logo-lockup.png` — icon-only and icon+wordmark crops, transparent background, cropped and verified from the full lockup for use as favicon and in compact headers (used in `style-guide.html`)
+
+The logo's icon gradient (navy → blue → teal) already lines up with the existing `primitive.color.navy` and `primitive.color.teal` scales — no palette change needed to accommodate it.

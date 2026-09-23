@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>Freito (SFQS) — Style Guide</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="assets/logo-icon.png">
 <style>
 /* Design Tokens - Auto-generated *//* Do not edit directly - modify tokens.json instead */
 /* === PRIMITIVES === */
@@ -429,6 +430,8 @@
   }
   @media (prefers-reduced-motion: reduce) { body { transition: none; } }
   .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+  .brand { display: flex; align-items: flex-start; gap: 0.85rem; }
+  .brand-mark { flex-shrink: 0; width: 40px; height: 28px; object-fit: contain; margin-top: 0.3rem; }
   .theme-toggle { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; border-radius: var(--button-radius, 6px); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-foreground); font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
   .theme-toggle:focus-visible { outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-ring)); outline-offset: var(--focus-ring-offset, 2px); }
   h1 { font-size: 1.75rem; margin: 0 0 0.25rem; }
@@ -524,9 +527,12 @@
 </head>
 <body>
   <header class="page-head">
-    <div>
-      <h1>Freito — Style Guide</h1>
-      <p class="brief">Freito (Smart Freight Quotation System — SFQS) — B2B freight quotation platform (FCL/LCL/Air), navy/slate enterprise dashboard</p>
+    <div class="brand">
+      <img src="assets/logo-icon.png" alt="Freito logo" class="brand-mark" width="40" height="28">
+      <div>
+        <h1>Freito — Style Guide</h1>
+        <p class="brief">Freito (Smart Freight Quotation System — SFQS) — B2B freight quotation platform (FCL/LCL/Air), navy/slate enterprise dashboard</p>
+      </div>
     </div>
     <button type="button" id="theme-toggle" class="theme-toggle" aria-pressed="false">
       <span id="theme-toggle-label">Dark mode</span>
