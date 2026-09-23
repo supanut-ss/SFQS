@@ -41,13 +41,18 @@ web/                   React + Vite + TypeScript (import tokens.css ตรง)
 - `ports` — code (UN/LOCODE), name, city, country, type (`Sea` / `Air`)
 - `carriers` — code, name, type (`Shipping Line` / `Airline`)
 - `currencies` — code, name, decimals; `exchange_rates` — currency, rate_to_base, effective_date (เก็บย้อนหลัง ไม่ overwrite)
-- `incoterms` — 11 เทอมคงที่ + `incoterm_charge_rules` (incoterm, charge_side `Origin`/`Destination`, payer `Seller`/`Buyer`) ← ต้อง confirm กับ Operation ก่อนเขียน logic
+- `incoterms` — 11 เทอมคงที่ + `incoterm_charge_rules` (incoterm, charge_side `Origin`/`Destination`, payer `Seller`/`Buyer`)
+  - **✅ ยืนยันแล้วกับ Operation**: ใบเสนอราคา 1 ใบออกให้ลูกค้าฝั่งเดียวเสมอ (ตาม `direction` Import/Export) และลูกค้าฝั่งนั้นจ่าย 100% ของทุกรายการในใบ — ไม่ใช่แบ่งจ่ายข้ามฝั่งในเอกสารเดียว ดังนั้น logic คือ: ถ้า `direction = Import` → ลูกค้าคือผู้ซื้อ ระบบรวมเฉพาะ local charge ฝั่งที่ `incoterm_charge_rules.payer = Buyer`; ถ้า `direction = Export` → ลูกค้าคือผู้ขาย ระบบรวมเฉพาะฝั่งที่ `payer = Seller` — ตรวจตรงกับตัวอย่างจริงแล้วทั้ง EXW (ผู้ซื้อรับทั้งสองฝั่ง), DDP (ผู้ขายรับทั้งสองฝั่ง), CIF (ผู้ขายรับแค่ต้นทาง ไม่มีปลายทางในใบเลย) — ตารางมาตรฐานใช้ได้จริง ไม่ต้องมี override เป็น freeform ต่อดีล
 - `cargo_types` — name, is_dangerous, is_prohibited
+- `users` — email, password_hash, role (`Sale`/`Operation`/`Admin`), is_active, created_at — **ไม่เคยระบุไว้ก่อนหน้านี้แม้จะอ้างถึงใน API §4 (`/api/master/users`) และ JWT auth ใน §1** — ต้องตัดสินใจก่อน T8 ว่าจะใช้ ASP.NET Core Identity เต็มรูปแบบ (สร้างตาราง Identity เอง, รองรับ password reset ในตัว) หรือทำตารางเรียบง่ายเองแล้ว hash รหัสผ่านเอง (เร็วกว่าสำหรับแค่ 3 role ภายใน ไม่มี self-signup)
 
 **Rate**
-- `freight_rates` — origin_port_id, destination_port_id, mode, direction, container_size (FCL), weight_break_min/max (Air), carrier_id, price, currency, valid_from, valid_to, is_active
-- `local_charges` — port_id, direction, mode, charge_type, **calc_basis** (`PerShipment` / `PerContainer` / `PerRevenueTon` / `PerKG` / `NotQuotable`), **amount_min**, **amount_max** (เท่ากันถ้าเป็นราคาตายตัว), currency, charge_side (`Origin`/`Destination`)
-  - **แก้จากตัวเลขจริง** (ดู [operation-worksheet.md](operation-worksheet.md) §4): local charge ของจริงมักมี **ราคาเป็นช่วง** ไม่ใช่ตัวเลขตายตัว (เช่น "TRANSPORT: 5,500-6,500 Baht", "PICK UP: THB 5,800-10,000") จึงต้องมี min/max ไม่ใช่ `amount` เดียว — เดิมที่ตั้งไว้เป็น `PerCBM` เปลี่ยนเป็น `PerRevenueTon` เพราะใบเสนอราคาจริงคิดค่า local charge ต่อ **revenue ton** (หน่วย "/RT") ซึ่งเป็นค่าเดียวกับที่ใช้คำนวณ freight ไม่ใช่ CBM ดิบ
+- `freight_rates` — origin_port_id, destination_port_id, mode, direction, container_size (FCL), weight_break_min/max (Air), carrier_id, **price_min**, **price_max** (เท่ากันถ้าเป็นราคาตายตัวอย่าง FCL), currency, valid_from, valid_to, is_active
+  - **แก้ตามหลักฐานจริง**: เดิมมีแค่ `price` เดียว แต่ Air rate จริงให้เป็นช่วง ($2.95–$3.10/kg) ไม่ใช่ตัวเลขเดียว — เปลี่ยนเป็น min/max แบบเดียวกับ `local_charges` (ดูด้านล่าง)
+  - **weight break ของ Air ต้องมี row สำหรับ "minimum chargeable weight"** ด้วย เช่น `weight_break_min=0, weight_break_max=50` แทนช่วง "ต่ำกว่า 50kg คิดเป็น 50kg" และ `weight_break_min=50, weight_break_max=500` เป็นช่วงที่มี rate จริง — **เกิน 500kg ไม่ seed row ไว้เลย** เพื่อให้ rate resolution คืน `NoRateFound` แล้วบังคับ Sale กรอกเอง (`rate_source = Manual`) ตามที่ยืนยันกับ Operation แล้ว (ดู §3)
+- `local_charges` — port_id, direction, mode, charge_type, **calc_basis** (`PerShipment` / `PerContainer` / `PerRevenueTon` / `PerCBM` / `PerKG` / `NotQuotable`), **amount_min**, **amount_max** (เท่ากันถ้าเป็นราคาตายตัว), currency, charge_side (`Origin`/`Destination`)
+  - **แก้จากตัวเลขจริง** (ดู [operation-worksheet.md](operation-worksheet.md) §4): local charge ของจริงมักมี **ราคาเป็นช่วง** ไม่ใช่ตัวเลขตายตัว (เช่น "TRANSPORT: 5,500-6,500 Baht", "PICK UP: THB 5,800-10,000") จึงต้องมี min/max ไม่ใช่ `amount` เดียว
+  - **ทั้ง `PerRevenueTon` และ `PerCBM` มีใช้จริง คนละเส้นทาง/คนละรายการ** — ใบ Ningbo (CFS/THC/STS/FAC) คิดต่อ **revenue ton** (หน่วย "/RT") แต่ใบ Jakarta (THC/CFS) คิดต่อ **CBM ดิบ** ตรงๆ (หน่วย "THB/CBM") จึงต้องเก็บ**ทั้งสองแบบแยกกัน** ไม่ใช่รวมเป็นแบบเดียว ต้องระบุ `calc_basis` ต่อรายการเวลา seed ข้อมูลจริง ไม่ใช่ตั้งสมมติฐานตายตัวว่าทุก local charge ของ LCL ใช้ revenue ton หมด
   - บาง local charge (เช่น air surcharge อย่าง SAF, X-ray, THC) คิดจาก **chargeable weight คูณเรทต่อ kg แต่มีขั้นต่ำ** (เช่น "Min: 65.00 €") —ต้องเพิ่ม **`minimum_charge`** แยกจาก `amount_min/max` (คนละความหมาย: `amount_min/max` = ช่วงราคาที่ยังไม่ได้เลือก, `minimum_charge` = พื้นราคาต่ำสุดเมื่อคำนวณจาก per-unit แล้วต่ำกว่านี้)
   - **✅ ตอบแล้ว — DDP charge ที่คำนวณล่วงหน้าไม่ได้ (Customs Duty % ของมูลค่าสินค้า, at-cost, ตามเวลาใช้จริงเช่น detention/storage) จาก LCB→Memphis: "ไม่ต้องเข้ายอด"** — ใช้ `calc_basis = NotQuotable` ให้เก็บเป็น**บรรทัดข้อมูล/หมายเหตุเท่านั้น** ไม่รวมเข้า `subtotal`/`total` ของใบเสนอราคา (แสดงเป็น "อาจมีค่าใช้จ่ายเพิ่มเติมตามจริง เช่น ภาษีศุลกากร/ค่าปรับตามเวลา — แจ้งราคาสุดท้ายอีกครั้งหลังยืนยันออเดอร์")
     - **ข้อดีของคำตอบนี้**: ไม่ต้องเพิ่ม `cargo_value` เข้า `Quotation` เลย เพราะไม่มีการคำนวณ % จริงในระบบ — แค่โชว์ข้อความ ทำให้ M2/T5 เบาลง ไม่ต้องรองรับ percent-of-value หรือ usage-based calculation จริงๆ
@@ -61,6 +66,8 @@ web/                   React + Vite + TypeScript (import tokens.css ตรง)
 **หลักเลข**: เงินใช้ `decimal(18,4)`, CBM/KG ใช้ `decimal(12,3)`, ปัดเศษเฉพาะตอนแสดงผลและตอนบันทึก final_price เท่านั้น
 
 ## 3. Quote engine — กฎที่ต้องชัดก่อนเขียน
+
+**✅ VAT: ไม่ต้องคิดในระบบ** — ยืนยันจาก Operation ว่าราคาทุกใบเสนอราคาไม่มีการคิด VAT เลย (`subtotal` = `total` = `final_price` ไม่มีชั้นภาษีเพิ่ม) — noted ไว้กันสับสนตอนเขียน T5
 
 **Rate resolution** (เรียงตามลำดับ):
 1. กรอง `freight_rates` ที่ตรง origin + destination + mode + direction + `is_active` + `ready_date` อยู่ในช่วง valid_from..valid_to
@@ -101,12 +108,30 @@ web/                   React + Vite + TypeScript (import tokens.css ตรง)
 
 ### M0 — Foundation (สัปดาห์ 0, ~3-5 วัน) ← เพิ่มใหม่
 - ยืนยันเวอร์ชัน .NET ที่ Plesk รองรับ + สร้าง MySQL database บน host
-- ~~สร้าง solution skeleton + React app + ต่อ `tokens.css` เข้า build~~ **เสร็จแล้ว** — ดู §7
+- ~~สร้าง solution skeleton + React app + ต่อ `tokens.css` เข้า build~~ **เสร็จแล้ว** — ดู §6
 - Deploy "hello world" ขึ้น Plesk จริงให้ผ่านก่อน (กัน surprise เรื่อง hosting bundle / connection string / HTTPS)
 - Confirm กับ Operation: mapping local charge ต่อ 11 Incoterms, weight break ของ Air, ตัวอย่างสูตรจริง
 - **Exit**: URL จริงเปิดได้ + คุยสูตรกับ Operation จบ — **ยังไม่จบ** เพราะ 2 ข้อบนต้องใช้สิทธิ์ Plesk/คุยกับทีม Operation ซึ่งผมทำแทนไม่ได้
 
-## 7. M0 — สิ่งที่ทำจริงแล้ว (ตรวจแล้ว)
+### M1 — Data Foundation (สัปดาห์ 1-2)
+Schema + migrations, seed Incoterms/**incoterm_charge_rules**/currencies/ports, หน้า Operation จัดการ rate/local charge + audit log + import CSV
+**Exit**: Operation เพิ่ม/แก้ rate ผ่านเว็บได้จริง และย้อนดูได้ว่าใครแก้อะไร
+
+### M2 — Quote Engine (สัปดาห์ 3-4)
+Quote engine + unit tests ครอบทุกโหมด, Instant Quote Form (guest), FCL vs LCL comparison, refresh rate + delta
+**Exit**: เคสทดสอบจาก Operation คำนวณตรงทุกเคส, ตอบใน < 2 วินาที
+
+### M3 — Approval Workflow (สัปดาห์ 5)
+Auth + role, quotation list/detail ของ Sale, approve/reject + versioning, email ใบเสนอราคา (PDF), notification
+**Exit**: ส่งถึงลูกค้าไม่ได้เลยถ้าไม่ผ่าน approve — พิสูจน์ด้วย integration test ที่ยิง API ตรง
+
+### M4 — Polish + UAT (สัปดาห์ 6-7)
+Design token ครบทุกหน้า, responsive + a11y, backup/monitoring บน Plesk, UAT กับ Sale/Operation
+**Exit**: ใช้งานจริง 1 สัปดาห์ไม่มี blocking bug
+
+> งาน QA ไม่แยกเป็น milestone — แต่ละ milestone ต้องมี test ของตัวเองก่อนถือว่าจบ
+
+## 6. M0 — สิ่งที่ทำจริงแล้ว (ตรวจแล้ว)
 
 **Backend** (`src/`, .NET 8 — SDK ใหม่สุดที่มีคือ .NET 10 แต่เลือก 8 เพราะเป็น LTS และมีโอกาสสูงสุดที่ Plesk hosting bundle จะรองรับ — **ต้องยืนยันกับ Plesk จริงใน T0**):
 - Solution `Freito.slnx` + 4 โปรเจกต์ตามผังใน §1 (`Freito.Api/Domain/Infrastructure/Tests`) พร้อม project reference ครบ
@@ -129,27 +154,9 @@ web/                   React + Vite + TypeScript (import tokens.css ตรง)
 - Deploy ขึ้น Plesk จริงเพื่อปิด exit criteria ของ M0
 - คุยสูตรกับทีม Operation (T1 ในตาราง work-plan.md)
 
-### M1 — Data Foundation (สัปดาห์ 1-2)
-Schema + migrations, seed Incoterms/currencies/ports, หน้า Operation จัดการ rate/local charge + audit log + import CSV
-**Exit**: Operation เพิ่ม/แก้ rate ผ่านเว็บได้จริง และย้อนดูได้ว่าใครแก้อะไร
+## 7. Decisions ที่เคยค้าง (ปิดครบแล้ว)
 
-### M2 — Quote Engine (สัปดาห์ 3-4)
-Quote engine + unit tests ครอบทุกโหมด, Instant Quote Form (guest), FCL vs LCL comparison, refresh rate + delta
-**Exit**: เคสทดสอบจาก Operation คำนวณตรงทุกเคส, ตอบใน < 2 วินาที
-
-### M3 — Approval Workflow (สัปดาห์ 5)
-Auth + role, quotation list/detail ของ Sale, approve/reject + versioning, email ใบเสนอราคา (PDF), notification
-**Exit**: ส่งถึงลูกค้าไม่ได้เลยถ้าไม่ผ่าน approve — พิสูจน์ด้วย integration test ที่ยิง API ตรง
-
-### M4 — Polish + UAT (สัปดาห์ 6-7)
-Design token ครบทุกหน้า, responsive + a11y, backup/monitoring บน Plesk, UAT กับ Sale/Operation
-**Exit**: ใช้งานจริง 1 สัปดาห์ไม่มี blocking bug
-
-> งาน QA ไม่แยกเป็น milestone — แต่ละ milestone ต้องมี test ของตัวเองก่อนถือว่าจบ
-
-## 6. Decisions ที่ยังค้าง (ต้องเคลียร์ก่อน M2/M3)
-
-ทุกข้อด้านล่าง + สูตรคำนวณเต็มรูปแบบ รวบรวมเป็นแบบฟอร์มกรอกพร้อมส่งให้ Operation แล้วที่ [operation-worksheet.md](operation-worksheet.md) — ใช้ปิด **T1** ใน [work-plan.md](work-plan.md)
+✅ **ทุกข้อตอบครบแล้ว** — เก็บไว้เป็นประวัติการตัดสินใจ รายละเอียด/หลักฐานเต็มอยู่ที่ [operation-worksheet.md](operation-worksheet.md) (ใช้ปิด **T1** ใน [work-plan.md](work-plan.md) แล้ว)
 
 | ประเด็น | ทำไมต้องรู้ |
 |---|---|

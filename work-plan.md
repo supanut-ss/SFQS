@@ -20,11 +20,12 @@ Leader = Claude Code session นี้ (ถือ architecture, schema, quote en
 | ID | งาน | ผู้ทำ | ขอบเขตไฟล์ | ขึ้นกับ | สถานะ |
 |---|---|---|---|---|---|
 | T0 | ยืนยันเวอร์ชัน .NET บน Plesk, สร้าง DB, deploy hello world | leader + ผู้ใช้ | infra | — | ⏳ รอผู้ใช้ (Plesk access) — solution ใช้ .NET 8 LTS ไปก่อนเป็น assumption |
-| T1 | ยืนยันสูตรกับ Operation (local charge × Incoterm, weight break, ตัวอย่างจริง) | ผู้ใช้/business | เอกสาร | — | ✅ **ปิดแล้ว** — ดู [operation-worksheet.md](operation-worksheet.md) (เอกสารเสริม 2 อย่างใน operation-open-questions.md ยังขอได้ แต่ไม่บล็อก T5 แล้ว) |
+| T1 | ยืนยันสูตรกับ Operation (local charge × Incoterm, weight break, ตัวอย่างจริง) | ผู้ใช้/business | เอกสาร | — | ✅ **ปิดแล้ว 100%** — ดู [operation-worksheet.md](operation-worksheet.md) |
 | T2 | แก้ contrast 7 คู่ + เติม component token + regenerate css/style guide | subagent (sonnet) | `tokens.json`, `tokens.css`, `style-guide.html` | — | ✅ เสร็จ |
 | T3 | Solution skeleton + EF Core + MySQL + migration แรก | leader | `src/**` | T0 | ✅ skeleton เสร็จ (ยังไม่มี migration จริงเพราะรอ T0/DB) |
-| T4 | Master data + rate/local charge CRUD + audit log + CSV import | subagent (sonnet) | `src/Freito.Api/Controllers/Rates*`, `Infrastructure/**` | T3 | |
-| T5 | **Quote engine** (rate resolution, 3 โหมด, breakeven, FX, snapshot) | **leader** | `src/Freito.Domain/Quoting/**` | T1, T3 |
+| **T3b** | **[ใหม่]** สร้าง core domain entities ทั้งหมดใน §2 (`Port`, `Carrier`, `Currency`, `ExchangeRate`, `Incoterm`, `IncotermChargeRule`, `CargoType`, `User`, `FreightRate`, `LocalCharge`, `Quotation`, `QuotationLine`, `QuotationStatusHistory`, `AuditLog`) — **leader ทำเอง ไม่ delegate เพราะ T4 กับ T5 ใช้ type เดียวกันพร้อมกัน ถ้าแยกให้ subagent คนละคนทำจะชนไฟล์กัน** | leader | `src/Freito.Domain/Entities/**` | T3 | ⬜ ยังไม่เริ่ม — ต้องทำก่อน T4/T5 |
+| T4 | Master data + rate/local charge CRUD + audit log + CSV import | subagent (sonnet) | `src/Freito.Api/Controllers/Rates*`, `Infrastructure/**` | **T3b** | |
+| T5 | **Quote engine** (rate resolution, 3 โหมด, breakeven, FX, snapshot) | **leader** | `src/Freito.Domain/Quoting/**` | T1, **T3b** |
 | T6 | Unit test quote engine ตามเคสจริง | subagent (sonnet) | `src/Freito.Tests/**` | T5 |
 | T7 | Quotation API (guest calculate/submit, list, detail, refresh-rate) | leader | `src/Freito.Api/Controllers/Quotes*` | T5 |
 | T8 | Auth + role + approval state machine + gate ใน service layer | **leader** | `src/Freito.Api/Auth/**`, `Domain/Workflow/**` | T7 |
@@ -42,14 +43,14 @@ Leader = Claude Code session นี้ (ถือ architecture, schema, quote en
 ## C. ลำดับการรวมงาน
 
 ```
-T0 ─┬─> T3 ─> T4 ─────────────> T12 ─┐
-    │        └> T5 ─> T6            │
-T1 ─┘              └> T7 ─> T8 ─┬─> T13 ─┼─> T15 ─> T16
-T2 ─> T10 ─> T11 ───────────────┴─> T14 ─┘
-                                 └> T9
+T0 ─┬─> T3 ─> T3b ─┬─> T4 ─────────> T12 ─┐
+    │              └─> T5 ─> T6           │
+T1 ─┘                     └> T7 ─> T8 ─┬─> T13 ─┼─> T15 ─> T16
+T2 ─> T10 ─> T11 ───────────────────────┴─> T14 ─┘
+                                        └> T9
 ```
 
-ทำ T2 และ T10/T11 คู่ขนานกับ backend ได้ เพราะคนละไฟล์ ส่วน T5 ต้องจบก่อน T7 เสมอ
+ทำ T2 และ T10/T11 คู่ขนานกับ backend ได้ เพราะคนละไฟล์ ส่วน T5 ต้องจบก่อน T7 เสมอ — **T3b เป็นจุดคอขวดที่ต้องทำให้เสร็จก่อนแยก T4/T5 ออกไปคู่ขนาน** (ทั้งคู่แก้ entity เดียวกัน ถ้าเริ่มพร้อมกันก่อน T3b เสร็จจะชนไฟล์)
 
 ## D. คำสั่งตรวจ (ใช้ทุก integration point)
 
@@ -68,6 +69,6 @@ git status && git diff --stat
 | ~~สูตร local charge × Incoterm ยังไม่ confirm~~ | — | ✅ ปิดแล้ว — T1 ตอบครบ, ดู technical-plan.md |
 | Guest endpoint ถูกยิงสแปม | ข้อมูลขยะ + โหลด DB | rate limit + honeypot ตั้งแต่ T7 |
 | MySQL decimal/rounding | ราคาเพี้ยนสะสม | ล็อก `decimal(18,4)` + test ปัดเศษใน T6 |
-| ~~ยังไม่ตัดสิน: base currency, ลำดับชั้นอนุมัติ, อายุใบ, SMTP~~ | — | ✅ ตอบครบแล้ว (USD, ไม่มีลำดับชั้น, 30 วัน, Manual/Outlook) — ดู technical-plan.md §6 |
+| ~~ยังไม่ตัดสิน: base currency, ลำดับชั้นอนุมัติ, อายุใบ, SMTP~~ | — | ✅ ตอบครบแล้ว (USD, ไม่มีลำดับชั้น, 30 วัน, Manual/Outlook) — ดู technical-plan.md §7 |
 | ~~Air weight break เป็นตารางหรือ minimum weight~~ | — | ✅ ตอบแล้ว: minimum 50kg + table ถึง 500kg, เกินนั้น manual — ดู technical-plan.md §3 |
 | ~~DDP charge แบบ %/at-cost/ตามเวลารวมเข้ายอด instant quote ไหม~~ | — | ✅ ปิดแล้ว: ไม่เข้ายอด, แสดงเป็นหมายเหตุแทน (`calc_basis = NotQuotable`) |
