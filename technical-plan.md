@@ -154,9 +154,15 @@ Design token ครบทุกหน้า, responsive + a11y, backup/monitorin
 - Deploy ขึ้น Plesk จริงเพื่อปิด exit criteria ของ M0
 - คุยสูตรกับทีม Operation (T1 ในตาราง work-plan.md)
 
-## 7. Decisions ที่เคยค้าง (ปิดครบแล้ว)
+## 7. Decisions ที่เคยค้าง
 
-✅ **ทุกข้อตอบครบแล้ว** — เก็บไว้เป็นประวัติการตัดสินใจ รายละเอียด/หลักฐานเต็มอยู่ที่ [operation-worksheet.md](operation-worksheet.md) (ใช้ปิด **T1** ใน [work-plan.md](work-plan.md) แล้ว)
+เกือบทั้งหมดตอบครบแล้ว (ประวัติด้านล่าง) — **มี 1 ข้อใหม่ที่เจอตอนเขียน T5** ยังไม่ได้ถาม Operation:
+
+| ประเด็น | ทำไมต้องรู้ |
+|---|---|
+| **[ใหม่]** เมื่อ rate/local charge เก็บเป็นช่วงราคา (`PriceMin`/`PriceMax` หรือ `AmountMin`/`AmountMax`) instant quote ควรใช้ปลายไหนคำนวณ? ตอนนี้โค้ด (`RateResolver`, `LocalChargeCalculator`) ใช้ **`Max` ไปก่อนเป็นสมมติฐาน** (กันการเสนอราคาต่ำเกินจริง) — มี comment `ASSUMPTION` กำกับไว้ในโค้ดทั้งสองจุด | กระทบราคาที่ลูกค้าเห็นตรงๆ ทุกเคสที่เจอ range (Air ทุกใบ, local charge ที่เป็นช่วงหลายรายการ) — ควรถาม Operation ยืนยันก่อนขึ้น production จริง |
+
+รายละเอียด/หลักฐานของข้อที่ตอบไปแล้วอยู่ที่ [operation-worksheet.md](operation-worksheet.md) (ใช้ปิด **T1** ใน [work-plan.md](work-plan.md) แล้ว) — ประวัติด้านล่างนี้:
 
 | ประเด็น | ทำไมต้องรู้ |
 |---|---|
