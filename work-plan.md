@@ -20,7 +20,7 @@ Leader = Claude Code session นี้ (ถือ architecture, schema, quote en
 | ID | งาน | ผู้ทำ | ขอบเขตไฟล์ | ขึ้นกับ | สถานะ |
 |---|---|---|---|---|---|
 | T0 | ยืนยันเวอร์ชัน .NET บน Plesk, สร้าง DB, deploy hello world | leader + ผู้ใช้ | infra | — | ⏳ รอผู้ใช้ (Plesk access) — solution ใช้ .NET 8 LTS ไปก่อนเป็น assumption |
-| T1 | ยืนยันสูตรกับ Operation (local charge × Incoterm, weight break, ตัวอย่างจริง) | ผู้ใช้/business | เอกสาร | — | ⏳ รอผู้ใช้ |
+| T1 | ยืนยันสูตรกับ Operation (local charge × Incoterm, weight break, ตัวอย่างจริง) | ผู้ใช้/business | เอกสาร | — | ✅ **ปิดแล้ว** — ดู [operation-worksheet.md](operation-worksheet.md) (เอกสารเสริม 2 อย่างใน operation-open-questions.md ยังขอได้ แต่ไม่บล็อก T5 แล้ว) |
 | T2 | แก้ contrast 7 คู่ + เติม component token + regenerate css/style guide | subagent (sonnet) | `tokens.json`, `tokens.css`, `style-guide.html` | — | ✅ เสร็จ |
 | T3 | Solution skeleton + EF Core + MySQL + migration แรก | leader | `src/**` | T0 | ✅ skeleton เสร็จ (ยังไม่มี migration จริงเพราะรอ T0/DB) |
 | T4 | Master data + rate/local charge CRUD + audit log + CSV import | subagent (sonnet) | `src/Freito.Api/Controllers/Rates*`, `Infrastructure/**` | T3 | |
@@ -28,7 +28,7 @@ Leader = Claude Code session นี้ (ถือ architecture, schema, quote en
 | T6 | Unit test quote engine ตามเคสจริง | subagent (sonnet) | `src/Freito.Tests/**` | T5 |
 | T7 | Quotation API (guest calculate/submit, list, detail, refresh-rate) | leader | `src/Freito.Api/Controllers/Quotes*` | T5 |
 | T8 | Auth + role + approval state machine + gate ใน service layer | **leader** | `src/Freito.Api/Auth/**`, `Domain/Workflow/**` | T7 |
-| T9 | ส่งอีเมลใบเสนอราคา + PDF | subagent (sonnet) | `src/Freito.Api/Notifications/**` | T8 |
+| T9 | Generate PDF ใบเสนอราคาให้ดาวน์โหลด (Sale ส่งเอง — ไม่ต้อง SMTP ตามคำตอบ Operation) | subagent (sonnet) | `src/Freito.Api/Quotes/PdfExport/**` | T8 |
 | T10 | React + Vite + Tailwind + token wiring + primitive set | subagent (sonnet) | `web/**` (config, theme) | T2 | 🔶 scaffold+wiring เสร็จจาก M0, primitive component set ยังไม่ทำ |
 | T11 | Component library ตาม style guide | subagent (sonnet) | `web/src/components/**` | T10 |
 | T12 | หน้า Operation/Admin (rate, local charge, master data) | subagent (sonnet) | `web/src/pages/ops/**` | T4, T11 |
@@ -65,7 +65,9 @@ git status && git diff --stat
 | ความเสี่ยง | ผลกระทบ | ทางรับมือ |
 |---|---|---|
 | Plesk ไม่รองรับ .NET เวอร์ชันที่เลือก | บล็อกทั้งโปรเจกต์ | T0 ทำก่อนทุกอย่าง |
-| สูตร local charge × Incoterm ยังไม่ confirm | เขียน T5 ซ้ำสองรอบ | T1 ต้องจบก่อน T5 |
+| ~~สูตร local charge × Incoterm ยังไม่ confirm~~ | — | ✅ ปิดแล้ว — T1 ตอบครบ, ดู technical-plan.md |
 | Guest endpoint ถูกยิงสแปม | ข้อมูลขยะ + โหลด DB | rate limit + honeypot ตั้งแต่ T7 |
 | MySQL decimal/rounding | ราคาเพี้ยนสะสม | ล็อก `decimal(18,4)` + test ปัดเศษใน T6 |
-| ยังไม่ตัดสิน: base currency, ลำดับชั้นอนุมัติ, อายุใบ, SMTP | บล็อก T5/T8/T9 | เคลียร์ก่อนถึงงานนั้น (ดู technical-plan.md §6) |
+| ~~ยังไม่ตัดสิน: base currency, ลำดับชั้นอนุมัติ, อายุใบ, SMTP~~ | — | ✅ ตอบครบแล้ว (USD, ไม่มีลำดับชั้น, 30 วัน, Manual/Outlook) — ดู technical-plan.md §6 |
+| ~~Air weight break เป็นตารางหรือ minimum weight~~ | — | ✅ ตอบแล้ว: minimum 50kg + table ถึง 500kg, เกินนั้น manual — ดู technical-plan.md §3 |
+| ~~DDP charge แบบ %/at-cost/ตามเวลารวมเข้ายอด instant quote ไหม~~ | — | ✅ ปิดแล้ว: ไม่เข้ายอด, แสดงเป็นหมายเหตุแทน (`calc_basis = NotQuotable`) |

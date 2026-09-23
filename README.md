@@ -10,6 +10,8 @@ B2B freight quotation platform (FCL / LCL / Air) — instant draft pricing with 
 | [project-plan.md](project-plan.md) | MVP scope, milestones, success metrics |
 | [technical-plan.md](technical-plan.md) | Architecture, schema, quote engine rules, API surface (React + ASP.NET Core + MySQL) |
 | [work-plan.md](work-plan.md) | Master task breakdown, acceptance criteria, delegation, risks |
+| [operation-worksheet.md](operation-worksheet.md) | Pricing formulas confirmed with Operation/Sale, verified against real quotes |
+| [operation-open-questions.md](operation-open-questions.md) | Remaining non-blocking follow-up documents requested from Operation |
 | [design-system-spec.md](design-system-spec.md) | Design tokens, decisions, and component specs |
 | [ui-plan.md](ui-plan.md) | UI audit, information architecture, CI/a11y setup |
 

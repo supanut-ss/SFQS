@@ -46,7 +46,11 @@ web/                   React + Vite + TypeScript (import tokens.css ตรง)
 
 **Rate**
 - `freight_rates` — origin_port_id, destination_port_id, mode, direction, container_size (FCL), weight_break_min/max (Air), carrier_id, price, currency, valid_from, valid_to, is_active
-- `local_charges` — port_id, direction, mode, charge_type, **calc_basis** (`PerShipment` / `PerContainer` / `PerCBM` / `PerKG`), amount, currency, charge_side (`Origin`/`Destination`)
+- `local_charges` — port_id, direction, mode, charge_type, **calc_basis** (`PerShipment` / `PerContainer` / `PerRevenueTon` / `PerKG` / `NotQuotable`), **amount_min**, **amount_max** (เท่ากันถ้าเป็นราคาตายตัว), currency, charge_side (`Origin`/`Destination`)
+  - **แก้จากตัวเลขจริง** (ดู [operation-worksheet.md](operation-worksheet.md) §4): local charge ของจริงมักมี **ราคาเป็นช่วง** ไม่ใช่ตัวเลขตายตัว (เช่น "TRANSPORT: 5,500-6,500 Baht", "PICK UP: THB 5,800-10,000") จึงต้องมี min/max ไม่ใช่ `amount` เดียว — เดิมที่ตั้งไว้เป็น `PerCBM` เปลี่ยนเป็น `PerRevenueTon` เพราะใบเสนอราคาจริงคิดค่า local charge ต่อ **revenue ton** (หน่วย "/RT") ซึ่งเป็นค่าเดียวกับที่ใช้คำนวณ freight ไม่ใช่ CBM ดิบ
+  - บาง local charge (เช่น air surcharge อย่าง SAF, X-ray, THC) คิดจาก **chargeable weight คูณเรทต่อ kg แต่มีขั้นต่ำ** (เช่น "Min: 65.00 €") —ต้องเพิ่ม **`minimum_charge`** แยกจาก `amount_min/max` (คนละความหมาย: `amount_min/max` = ช่วงราคาที่ยังไม่ได้เลือก, `minimum_charge` = พื้นราคาต่ำสุดเมื่อคำนวณจาก per-unit แล้วต่ำกว่านี้)
+  - **✅ ตอบแล้ว — DDP charge ที่คำนวณล่วงหน้าไม่ได้ (Customs Duty % ของมูลค่าสินค้า, at-cost, ตามเวลาใช้จริงเช่น detention/storage) จาก LCB→Memphis: "ไม่ต้องเข้ายอด"** — ใช้ `calc_basis = NotQuotable` ให้เก็บเป็น**บรรทัดข้อมูล/หมายเหตุเท่านั้น** ไม่รวมเข้า `subtotal`/`total` ของใบเสนอราคา (แสดงเป็น "อาจมีค่าใช้จ่ายเพิ่มเติมตามจริง เช่น ภาษีศุลกากร/ค่าปรับตามเวลา — แจ้งราคาสุดท้ายอีกครั้งหลังยืนยันออเดอร์")
+    - **ข้อดีของคำตอบนี้**: ไม่ต้องเพิ่ม `cargo_value` เข้า `Quotation` เลย เพราะไม่มีการคำนวณ % จริงในระบบ — แค่โชว์ข้อความ ทำให้ M2/T5 เบาลง ไม่ต้องรองรับ percent-of-value หรือ usage-based calculation จริงๆ
 
 **Quotation** (เพิ่มจาก requirements)
 - `quotations` — `quote_no` (running, unique), customer_name/company/email/phone, origin/destination, direction, mode, cargo_type, qty, container_size/cbm/weight, incoterm, ready_date, **quote_currency**, **fx_rate_used**, `rate_source` (`System`/`Refreshed`/`Manual`), freight_cost, local_charge_total, subtotal, discount_amount, **final_price**, status, version, created_by (nullable = guest), approved_by, approved_at, sent_at, expires_at
@@ -63,12 +67,15 @@ web/                   React + Vite + TypeScript (import tokens.css ตรง)
 2. กรองตามขนาดตู้ (FCL) หรือ weight break ที่ครอบ chargeable weight (Air)
 3. เจอหลายรายการ → normalize เป็นสกุลฐานด้วย exchange rate ล่าสุด แล้ว **เลือกราคาต่ำสุด** และคืนรายการที่เหลือให้ Sale เลือกเปลี่ยน carrier ได้
 4. ไม่เจอเลย → ไม่บล็อก แต่ตอบ `NoRateFound` + ให้ Sale กรอกราคาเอง (`rate_source = Manual`) และ flag ให้ Operation รู้ว่าเส้นทางนี้ยังไม่มี rate
+   - **สำหรับ Air**: path นี้ไม่ใช่ edge case แต่เป็น**เส้นทางหลักที่คาดว่าจะเกิดบ่อย** — ยืนยันจาก Operation ว่า chargeable weight เกิน 500 kg ไม่มี rate table ตายตัว ต้องให้ Sale กรอกเองเสมอ (ดู §3 ด้านล่าง)
 
 **สูตร**
 - FCL: `freight = rate_per_container × qty_containers`
 - LCL: `revenue_ton = max(CBM, weight_kg / 1000)` → `freight = rate × revenue_ton`
 - Air: `chargeable_weight = max(actual_kg, volume_cm³ / 6000)` → เลือก weight break → `freight = rate_per_kg × chargeable_weight`
-- Local charge: รวมตาม `calc_basis` ของแต่ละรายการ และเก็บเฉพาะฝั่งที่ลูกค้าต้องจ่ายตาม `incoterm_charge_rules`
+  - **ตัวหาร 6000 ยืนยันแล้วด้วยตัวเลขจริง** — ใบเสนอราคา Air Barcelona→BKK จริง (ดู [operation-worksheet.md](operation-worksheet.md) §4) คำนวณ volumetric weight ตรงกับสูตรนี้เป๊ะ (53.5 cbm → 8,916.4 kg, freight 1.85×8,916.4 = 16,495.34 ตรงทุกบาท)
+  - **weight break ยืนยันแล้ว — ไม่ใช่ตารางหลายชั้นแบบที่สมมติไว้เดิม (<45/45-100/100-300/300+)**: มี **minimum chargeable weight = 50 kg** (ต่ำกว่านี้คิดเป็น 50 kg) + เรทช่วง 50–500 kg ตาม rate table ปกติ (เก็บเป็นช่วงราคา `price_min`/`price_max` เพราะของจริงให้เป็นช่วงเช่น $2.95–$3.10/kg ไม่ใช่ราคาเดียว) — **เกิน 500 kg ไม่มี rate table เลย ให้ Sale กรอกราคาเอง (`rate_source = Manual`) ทุกครั้ง** ตามที่ยืนยันแล้วข้างบน
+- Local charge: รวมตาม `calc_basis` ของแต่ละรายการ และเก็บเฉพาะฝั่งที่ลูกค้าต้องจ่ายตาม `incoterm_charge_rules` — **ยกเว้นรายการที่ `calc_basis = NotQuotable`** (เช่น DDP customs duty/at-cost/detention) **ไม่รวมเข้า subtotal เลย** แสดงแยกเป็นหมายเหตุใต้ยอดรวมแทน
 - Breakeven LCL vs FCL: `(rate_LCL × CBM) + local_LCL` เทียบกับ `rate_FCL + local_FCL` ← **แก้จากสูตรเดิมในเอกสารแล้ว**
 
 **"ดึงอัตราล่าสุด"** = เทียบ `quotation_lines` (snapshot ตอนสร้าง draft) กับค่าปัจจุบันใน `freight_rates` แล้วแสดง delta — กดเองเท่านั้น ไม่ auto refresh
@@ -142,10 +149,14 @@ Design token ครบทุกหน้า, responsive + a11y, backup/monitorin
 
 ## 6. Decisions ที่ยังค้าง (ต้องเคลียร์ก่อน M2/M3)
 
+ทุกข้อด้านล่าง + สูตรคำนวณเต็มรูปแบบ รวบรวมเป็นแบบฟอร์มกรอกพร้อมส่งให้ Operation แล้วที่ [operation-worksheet.md](operation-worksheet.md) — ใช้ปิด **T1** ใน [work-plan.md](work-plan.md)
+
 | ประเด็น | ทำไมต้องรู้ |
 |---|---|
-| ส่วนลดเกิน X% ต้องหัวหน้าอนุมัติไหม | กระทบ state machine + role model ใน M3 |
-| สกุลฐาน (base currency) ของระบบคือ THB หรือ USD | กระทบทุกการเปรียบเทียบราคาใน M2 |
-| Rate หมดอายุ → เตือน หรือบล็อกไม่ให้ออกใบ | กระทบ rate resolution ใน M2 |
-| อายุใบเสนอราคา (expires_at) กี่วัน | ตั้งเป็น config ได้ แต่ต้องมีค่าเริ่มต้น |
-| ส่งใบเสนอราคาทางอีเมลผ่าน SMTP ตัวไหน | Plesk mail หรือ service ภายนอก — กระทบ M3 |
+| ~~ส่วนลดเกิน X% ต้องหัวหน้าอนุมัติไหม~~ | ✅ **ตอบแล้ว**: ไม่มี ระดับชั้นอนุมัติเดียว |
+| ~~สกุลฐาน (base currency) ของระบบคือ THB หรือ USD~~ | ✅ **ตอบแล้ว**: **USD** |
+| ~~Rate หมดอายุ → เตือน หรือบล็อกไม่ให้ออกใบ~~ | ✅ **ตอบแล้ว**: **เตือนให้อัพเดท** ไม่บล็อก |
+| ~~อายุใบเสนอราคา (expires_at) กี่วัน~~ | ✅ **ตอบแล้ว**: **30 วัน** |
+| ~~ส่งใบเสนอราคาทางอีเมลผ่าน SMTP ตัวไหน~~ | ✅ **ตอบแล้ว**: Manual ผ่าน Outlook — Sale โหลด PDF ไปส่งเอง ไม่ต้องมี SMTP integration ในระบบ (ลดงาน M3) |
+| ~~Air weight break เป็นตารางตายตัว หรือมีแค่ minimum chargeable weight~~ | ✅ **ตอบแล้ว**: minimum 50kg + rate table ถึง 500kg, เกินนั้น**กรอกเองได้ (manual)** — ดู §3 |
+| ~~DDP quote มีค่าใช้จ่าย % ของมูลค่าสินค้า / at-cost / ตามเวลาใช้จริง — รวมเข้ายอดไหม~~ | ✅ **ตอบแล้ว**: **ไม่ต้องเข้ายอด** — เก็บเป็นหมายเหตุ (`calc_basis = NotQuotable`) เท่านั้น |
