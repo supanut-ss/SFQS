@@ -1,11 +1,20 @@
 using Freito.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<Freito.Api.Services.AuditLogWriter>();
+builder.Services.AddScoped<Freito.Api.Services.FreightRateService>();
+builder.Services.AddScoped<Freito.Api.Services.LocalChargeService>();
+builder.Services.AddScoped<Freito.Api.Services.FreightRateCsvImporter>();
+builder.Services.AddScoped<Freito.Api.Services.LocalChargeCsvImporter>();
 
 // Connection string comes from appsettings / environment / Plesk app settings —
 // never hardcoded. See appsettings.json for the expected key.

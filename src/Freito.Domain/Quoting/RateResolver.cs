@@ -21,13 +21,13 @@ public static class RateResolver
         IReadOnlyList<FreightRate> candidates,
         DateTime readyDate,
         string? containerSize,
-        decimal? chargeableWeightKg,
+        decimal? weightForRateLookupKg,
         IReadOnlyDictionary<string, decimal> exchangeRatesToBase)
     {
         var matching = candidates.Where(r =>
             r.IsActive &&
             readyDate >= r.ValidFrom && readyDate <= r.ValidTo &&
-            MatchesContainerOrWeight(r, containerSize, chargeableWeightKg)
+            MatchesContainerOrWeight(r, containerSize, weightForRateLookupKg)
         ).ToList();
 
         if (matching.Count == 0)
@@ -45,22 +45,25 @@ public static class RateResolver
         return RateResolutionResult.Resolved(best, alternatives);
     }
 
-    private static bool MatchesContainerOrWeight(FreightRate rate, string? containerSize, decimal? chargeableWeightKg)
+    private static bool MatchesContainerOrWeight(FreightRate rate, string? containerSize, decimal? weightForRateLookupKg)
     {
         if (containerSize is not null)
         {
             return string.Equals(rate.ContainerSize, containerSize, StringComparison.OrdinalIgnoreCase);
         }
 
-        if (chargeableWeightKg is not null && rate.WeightBreakMin is not null && rate.WeightBreakMax is not null)
+        if (weightForRateLookupKg is not null && rate.WeightBreakMin is not null && rate.WeightBreakMax is not null)
         {
             // Deliberately no rate rows exist above 500kg (see FreightRate doc comment) —
             // that absence is what makes this return false and fall through to NotFound.
-            return chargeableWeightKg >= rate.WeightBreakMin && chargeableWeightKg <= rate.WeightBreakMax;
+            var weight = weightForRateLookupKg.Value;
+            var min = rate.WeightBreakMin.Value;
+            var max = rate.WeightBreakMax.Value;
+            return weight >= min && (weight < max || weight == 500m && max == 500m);
         }
 
         // LCL: no container size, no weight bracket — one flat rate per route/carrier.
-        return containerSize is null && chargeableWeightKg is null;
+        return containerSize is null && weightForRateLookupKg is null;
     }
 
     private static decimal ToBase(decimal amount, string currencyCode, IReadOnlyDictionary<string, decimal> ratesToBase)

@@ -20,10 +20,12 @@ public class FreightRate
     public string? ContainerSize { get; set; }
 
     /// <summary>
-    /// Air only, kg. A row with WeightBreakMin=0, WeightBreakMax=50 represents the minimum
-    /// chargeable weight bracket (anything under 50kg is billed as 50kg) — confirmed with
-    /// Operation, see technical-plan.md §3. No row is seeded above 500kg on purpose: rate
-    /// resolution should return NoRateFound there so Sale must enter the price manually.
+    /// Air only, kg. The lower bound is inclusive and the upper bound exclusive, except
+    /// 500kg is included in the final bracket. A row with WeightBreakMin=0, WeightBreakMax=50
+    /// represents the minimum chargeable weight bracket (anything under 50kg is billed as
+    /// 50kg) — confirmed with Operation, see technical-plan.md §3. No row is seeded above
+    /// 500kg on purpose: rate resolution should return NoRateFound there so Sale must enter
+    /// the price manually.
     /// </summary>
     public decimal? WeightBreakMin { get; set; }
     public decimal? WeightBreakMax { get; set; }

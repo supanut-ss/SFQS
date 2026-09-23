@@ -19,6 +19,7 @@ public static class QuoteCalculator
         IReadOnlyDictionary<string, decimal> exchangeRatesToBase)
     {
         decimal? chargeableWeightKg = null;
+        decimal? rateLookupWeightKg = null;
         decimal? revenueTon = null;
 
         if (request.Mode == TransportMode.Lcl)
@@ -29,16 +30,17 @@ public static class QuoteCalculator
         }
         else if (request.Mode == TransportMode.Air)
         {
-            chargeableWeightKg = ChargeableWeightCalculator.AirChargeableWeightKg(
+            rateLookupWeightKg = ChargeableWeightCalculator.AirRateLookupWeightKg(
                 request.ActualWeightKg ?? throw new ArgumentException("Air requires ActualWeightKg.", nameof(request)),
                 request.VolumeCm3 ?? throw new ArgumentException("Air requires VolumeCm3.", nameof(request)));
+            chargeableWeightKg = Math.Max(rateLookupWeightKg.Value, ChargeableWeightCalculator.AirMinimumChargeableWeightKg);
         }
 
         var resolution = RateResolver.Resolve(
             freightRateCandidates,
             request.ReadyDate,
             request.Mode == TransportMode.Fcl ? request.ContainerSize : null,
-            chargeableWeightKg,
+            rateLookupWeightKg,
             exchangeRatesToBase);
 
         var (localLines, localTotal) = LocalChargeCalculator.Calculate(

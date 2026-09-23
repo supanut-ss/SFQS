@@ -20,16 +20,19 @@ public static class ChargeableWeightCalculator
     public const decimal AirMinimumChargeableWeightKg = 50m;
 
     /// <summary>
-    /// Air chargeable weight = max(actual weight, volumetric weight), floored at the
-    /// minimum chargeable weight. volumeCm3 is the total volume of the shipment in cm³
-    /// (sum of length × width × height × qty for every piece).
+    /// Air weight used to select the rate bracket = max(actual weight, volumetric weight),
+    /// before applying the minimum billable weight. volumeCm3 is the total volume of the
+    /// shipment in cm³ (sum of length × width × height × qty for every piece).
     /// </summary>
-    public static decimal AirChargeableWeightKg(decimal actualWeightKg, decimal volumeCm3)
+    public static decimal AirRateLookupWeightKg(decimal actualWeightKg, decimal volumeCm3)
     {
         var volumetricWeightKg = volumeCm3 / AirVolumetricDivisorCm3PerKg;
-        var chargeable = Math.Max(actualWeightKg, volumetricWeightKg);
-        return Math.Max(chargeable, AirMinimumChargeableWeightKg);
+        return Math.Max(actualWeightKg, volumetricWeightKg);
     }
+
+    /// <summary>Air billable weight, including the confirmed 50 kg minimum.</summary>
+    public static decimal AirChargeableWeightKg(decimal actualWeightKg, decimal volumeCm3)
+        => Math.Max(AirRateLookupWeightKg(actualWeightKg, volumeCm3), AirMinimumChargeableWeightKg);
 
     /// <summary>
     /// LCL revenue ton = max(CBM, weight in tonnes), rounded UP to the nearest 0.1 —

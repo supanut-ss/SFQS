@@ -4,7 +4,8 @@ namespace Freito.Domain.Entities;
 /// A snapshot of one priced line (freight, or one local charge) at the moment a quotation
 /// was calculated. This is what makes old quotes immune to later rate changes — "refresh
 /// rate" compares this snapshot against the current FreightRate/LocalCharge, it never
-/// mutates it. SourceRateId is nullable because a Manual-entered line has no source rate.
+/// mutates it. A Manual-entered line has neither source ID set; priced lines reference
+/// either their freight rate or local charge.
 /// </summary>
 public class QuotationLine
 {
@@ -17,4 +18,5 @@ public class QuotationLine
     public decimal Amount { get; set; }
     public string Currency { get; set; } = default!;
     public int? SourceRateId { get; set; }
+    public int? SourceLocalChargeId { get; set; }
 }
