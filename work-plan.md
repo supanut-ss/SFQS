@@ -23,12 +23,12 @@ Leader = Claude Code session นี้ (ถือ architecture, schema, quote en
 | T1 | ยืนยันสูตรกับ Operation (local charge × Incoterm, weight break, ตัวอย่างจริง) | ผู้ใช้/business | เอกสาร | — |
 | T2 | แก้ contrast 7 คู่ + เติม component token + regenerate css/style guide | subagent (sonnet) | `tokens.json`, `tokens.css`, `style-guide.html` | — |
 | T3 | Solution skeleton + EF Core + MySQL + migration แรก | leader | `src/**` | T0 |
-| T4 | Master data + rate/local charge CRUD + audit log + CSV import | subagent (sonnet) | `src/SFQS.Api/Controllers/Rates*`, `Infrastructure/**` | T3 |
-| T5 | **Quote engine** (rate resolution, 3 โหมด, breakeven, FX, snapshot) | **leader** | `src/SFQS.Domain/Quoting/**` | T1, T3 |
-| T6 | Unit test quote engine ตามเคสจริง | subagent (sonnet) | `src/SFQS.Tests/**` | T5 |
-| T7 | Quotation API (guest calculate/submit, list, detail, refresh-rate) | leader | `src/SFQS.Api/Controllers/Quotes*` | T5 |
-| T8 | Auth + role + approval state machine + gate ใน service layer | **leader** | `src/SFQS.Api/Auth/**`, `Domain/Workflow/**` | T7 |
-| T9 | ส่งอีเมลใบเสนอราคา + PDF | subagent (sonnet) | `src/SFQS.Api/Notifications/**` | T8 |
+| T4 | Master data + rate/local charge CRUD + audit log + CSV import | subagent (sonnet) | `src/Freito.Api/Controllers/Rates*`, `Infrastructure/**` | T3 |
+| T5 | **Quote engine** (rate resolution, 3 โหมด, breakeven, FX, snapshot) | **leader** | `src/Freito.Domain/Quoting/**` | T1, T3 |
+| T6 | Unit test quote engine ตามเคสจริง | subagent (sonnet) | `src/Freito.Tests/**` | T5 |
+| T7 | Quotation API (guest calculate/submit, list, detail, refresh-rate) | leader | `src/Freito.Api/Controllers/Quotes*` | T5 |
+| T8 | Auth + role + approval state machine + gate ใน service layer | **leader** | `src/Freito.Api/Auth/**`, `Domain/Workflow/**` | T7 |
+| T9 | ส่งอีเมลใบเสนอราคา + PDF | subagent (sonnet) | `src/Freito.Api/Notifications/**` | T8 |
 | T10 | React + Vite + Tailwind + token wiring + primitive set | subagent (sonnet) | `web/**` (config, theme) | T2 |
 | T11 | Component library ตาม style guide | subagent (sonnet) | `web/src/components/**` | T10 |
 | T12 | หน้า Operation/Admin (rate, local charge, master data) | subagent (sonnet) | `web/src/pages/ops/**` | T4, T11 |

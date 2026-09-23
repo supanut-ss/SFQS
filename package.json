@@ -1,8 +1,8 @@
 {
-  "name": "sfqs-design-system",
+  "name": "freito-design-system",
   "version": "0.1.0",
   "private": true,
-  "description": "SFQS design tokens, style guide, and their automated checks",
+  "description": "Freito (SFQS) design tokens, style guide, and their automated checks",
   "scripts": {
     "tokens:build": "node scripts/generate-tokens.cjs --config tokens.json -o tokens.css",
     "tokens:check": "node scripts/check-tokens-fresh.mjs",

@@ -28,10 +28,10 @@ Browser ──> https://<domain>/            React SPA (static, served by ASP.NE
 ### Solution layout
 ```
 src/
-  SFQS.Api/            controllers, auth, DI, wwwroot (React build)
-  SFQS.Domain/         entities, enums, business rules (quote engine อยู่ที่นี่)
-  SFQS.Infrastructure/ EF Core DbContext, migrations, repositories
-  SFQS.Tests/          unit tests (เน้น quote engine) + integration tests
+  Freito.Api/            controllers, auth, DI, wwwroot (React build)
+  Freito.Domain/         entities, enums, business rules (quote engine อยู่ที่นี่)
+  Freito.Infrastructure/ EF Core DbContext, migrations, repositories
+  Freito.Tests/          unit tests (เน้น quote engine) + integration tests
 web/                   React + Vite + TypeScript (import tokens.css ตรง)
 ```
 
