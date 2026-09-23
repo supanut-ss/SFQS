@@ -17,19 +17,19 @@ Leader = Claude Code session นี้ (ถือ architecture, schema, quote en
 
 ## B. ตารางงาน
 
-| ID | งาน | ผู้ทำ | ขอบเขตไฟล์ | ขึ้นกับ |
-|---|---|---|---|---|
-| T0 | ยืนยันเวอร์ชัน .NET บน Plesk, สร้าง DB, deploy hello world | leader + ผู้ใช้ | infra | — |
-| T1 | ยืนยันสูตรกับ Operation (local charge × Incoterm, weight break, ตัวอย่างจริง) | ผู้ใช้/business | เอกสาร | — |
-| T2 | แก้ contrast 7 คู่ + เติม component token + regenerate css/style guide | subagent (sonnet) | `tokens.json`, `tokens.css`, `style-guide.html` | — |
-| T3 | Solution skeleton + EF Core + MySQL + migration แรก | leader | `src/**` | T0 |
-| T4 | Master data + rate/local charge CRUD + audit log + CSV import | subagent (sonnet) | `src/Freito.Api/Controllers/Rates*`, `Infrastructure/**` | T3 |
+| ID | งาน | ผู้ทำ | ขอบเขตไฟล์ | ขึ้นกับ | สถานะ |
+|---|---|---|---|---|---|
+| T0 | ยืนยันเวอร์ชัน .NET บน Plesk, สร้าง DB, deploy hello world | leader + ผู้ใช้ | infra | — | ⏳ รอผู้ใช้ (Plesk access) — solution ใช้ .NET 8 LTS ไปก่อนเป็น assumption |
+| T1 | ยืนยันสูตรกับ Operation (local charge × Incoterm, weight break, ตัวอย่างจริง) | ผู้ใช้/business | เอกสาร | — | ⏳ รอผู้ใช้ |
+| T2 | แก้ contrast 7 คู่ + เติม component token + regenerate css/style guide | subagent (sonnet) | `tokens.json`, `tokens.css`, `style-guide.html` | — | ✅ เสร็จ |
+| T3 | Solution skeleton + EF Core + MySQL + migration แรก | leader | `src/**` | T0 | ✅ skeleton เสร็จ (ยังไม่มี migration จริงเพราะรอ T0/DB) |
+| T4 | Master data + rate/local charge CRUD + audit log + CSV import | subagent (sonnet) | `src/Freito.Api/Controllers/Rates*`, `Infrastructure/**` | T3 | |
 | T5 | **Quote engine** (rate resolution, 3 โหมด, breakeven, FX, snapshot) | **leader** | `src/Freito.Domain/Quoting/**` | T1, T3 |
 | T6 | Unit test quote engine ตามเคสจริง | subagent (sonnet) | `src/Freito.Tests/**` | T5 |
 | T7 | Quotation API (guest calculate/submit, list, detail, refresh-rate) | leader | `src/Freito.Api/Controllers/Quotes*` | T5 |
 | T8 | Auth + role + approval state machine + gate ใน service layer | **leader** | `src/Freito.Api/Auth/**`, `Domain/Workflow/**` | T7 |
 | T9 | ส่งอีเมลใบเสนอราคา + PDF | subagent (sonnet) | `src/Freito.Api/Notifications/**` | T8 |
-| T10 | React + Vite + Tailwind + token wiring + primitive set | subagent (sonnet) | `web/**` (config, theme) | T2 |
+| T10 | React + Vite + Tailwind + token wiring + primitive set | subagent (sonnet) | `web/**` (config, theme) | T2 | 🔶 scaffold+wiring เสร็จจาก M0, primitive component set ยังไม่ทำ |
 | T11 | Component library ตาม style guide | subagent (sonnet) | `web/src/components/**` | T10 |
 | T12 | หน้า Operation/Admin (rate, local charge, master data) | subagent (sonnet) | `web/src/pages/ops/**` | T4, T11 |
 | T13 | หน้า public quote + FCL/LCL compare | subagent (sonnet) | `web/src/pages/quote/**` | T7, T11 |

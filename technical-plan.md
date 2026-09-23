@@ -94,10 +94,33 @@ web/                   React + Vite + TypeScript (import tokens.css ตรง)
 
 ### M0 — Foundation (สัปดาห์ 0, ~3-5 วัน) ← เพิ่มใหม่
 - ยืนยันเวอร์ชัน .NET ที่ Plesk รองรับ + สร้าง MySQL database บน host
-- สร้าง solution skeleton + React app + ต่อ `tokens.css` เข้า build
+- ~~สร้าง solution skeleton + React app + ต่อ `tokens.css` เข้า build~~ **เสร็จแล้ว** — ดู §7
 - Deploy "hello world" ขึ้น Plesk จริงให้ผ่านก่อน (กัน surprise เรื่อง hosting bundle / connection string / HTTPS)
 - Confirm กับ Operation: mapping local charge ต่อ 11 Incoterms, weight break ของ Air, ตัวอย่างสูตรจริง
-- **Exit**: URL จริงเปิดได้ + คุยสูตรกับ Operation จบ
+- **Exit**: URL จริงเปิดได้ + คุยสูตรกับ Operation จบ — **ยังไม่จบ** เพราะ 2 ข้อบนต้องใช้สิทธิ์ Plesk/คุยกับทีม Operation ซึ่งผมทำแทนไม่ได้
+
+## 7. M0 — สิ่งที่ทำจริงแล้ว (ตรวจแล้ว)
+
+**Backend** (`src/`, .NET 8 — SDK ใหม่สุดที่มีคือ .NET 10 แต่เลือก 8 เพราะเป็น LTS และมีโอกาสสูงสุดที่ Plesk hosting bundle จะรองรับ — **ต้องยืนยันกับ Plesk จริงใน T0**):
+- Solution `Freito.slnx` + 4 โปรเจกต์ตามผังใน §1 (`Freito.Api/Domain/Infrastructure/Tests`) พร้อม project reference ครบ
+- EF Core 8 + Pomelo MySQL provider ผูกกับ `FreitoDbContext` (มี entity เดียวคือ `Incoterm` เป็น proof-of-pipeline — schema เต็มเป็นงาน M1)
+- ตั้งใจใช้ **pinned `MySqlServerVersion`** แทน `ServerVersion.AutoDetect` เพราะ AutoDetect เชื่อมต่อ DB แบบ synchronous ตอน startup — ถ้า Plesk MySQL หลุดชั่วคราวตอนบูตแอปจะ crash-loop ทั้งแอป ปักหมุดเวอร์ชันแทนเพื่อให้แอปเริ่มได้แม้ DB ยังต่อไม่ได้
+- `GET /api/health` (liveness, ไม่ต้องมี DB) และ `GET /api/health/db` (readiness, คืน 503 ถ้าต่อ DB ไม่ได้ — ไม่ throw) — **ทดสอบจริงแล้ว**: รันแอปโดยไม่มี MySQL อยู่เลย ยัง boot ได้ `/api/health` ตอบ 200, `/api/health/db` ตอบ 503 ตามที่ออกแบบ
+- Unit test 2 เคสผ่าน EF Core InMemory provider — `dotnet test` **ผ่านจริง 2/2**
+- MSBuild target `BuildWebApp` ใน `Freito.Api.csproj`: `dotnet publish` จะ build React app และ copy เข้า `wwwroot` อัตโนมัติ ให้ deploy ขึ้น Plesk เป็น artifact เดียว
+
+**Frontend** (`web/`, React 19 + Vite + TypeScript + Tailwind):
+- `npm run tokens:sync` (auto-run ก่อน dev/build) copy `../tokens.css` เข้า `web/src/styles/` — root `tokens.json`/`tokens.css` ยังเป็น source of truth เดียว ไม่มีการ fork
+- `tailwind.config.js` map สีทุกตัวเป็น `var(--...)` ชี้กลับไปที่ token จริง ไม่มีสีใหม่ถูกสร้างขึ้น (ตรวจแล้วด้วยการอ่านไฟล์)
+- หน้า placeholder เดียว: โลโก้ + เช็คสถานะ API — **ตรวจผ่านเบราว์เซอร์จริงแล้ว**: build ผ่าน, dark mode ตรงกับ `style-guide.html` (ผ่าน `prefers-color-scheme` เดียวกัน), เรียก `/api/health` สำเร็จ
+
+**Single-domain serving** — ตรวจจริงโดยรัน `dotnet run` แล้ว build React ใส่ `wwwroot` เอง (ก่อนที่ publish target จะทำอัตโนมัติ): `GET http://localhost:5025/` คืน 200 (SPA), `GET http://localhost:5025/api/health` คืน 200 (API) จาก origin เดียวกัน — ตรงกับสถาปัตยกรรมใน §1 เป๊ะ
+
+**ยังไม่ได้ทำ / บล็อกอยู่ที่ผู้ใช้**:
+- ยืนยันเวอร์ชัน .NET ที่ Plesk รองรับจริง (ผมสมมติ .NET 8 LTS ไว้ก่อน — ถ้า Plesk รองรับแค่เก่ากว่านี้ต้อง downgrade)
+- สร้าง MySQL database บน Plesk host + connection string จริง
+- Deploy ขึ้น Plesk จริงเพื่อปิด exit criteria ของ M0
+- คุยสูตรกับทีม Operation (T1 ในตาราง work-plan.md)
 
 ### M1 — Data Foundation (สัปดาห์ 1-2)
 Schema + migrations, seed Incoterms/currencies/ports, หน้า Operation จัดการ rate/local charge + audit log + import CSV

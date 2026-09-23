@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Freito.Api/Freito.Api.csproj" />
+  <Project Path="Freito.Domain/Freito.Domain.csproj" />
+  <Project Path="Freito.Infrastructure/Freito.Infrastructure.csproj" />
+  <Project Path="Freito.Tests/Freito.Tests.csproj" />
+</Solution>

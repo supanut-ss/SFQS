@@ -1,0 +1,22 @@
+/* Freito design tokens — generated from ../tokens.json, synced by
+   `npm run tokens:sync` (see scripts/sync-tokens.mjs). Do not edit this
+   file's imported content by hand. */
+@import "./styles/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+  }
+}

@@ -1,1 +1,17 @@
 node_modules/
+
+# .NET
+src/**/bin/
+src/**/obj/
+src/Freito.Api/wwwroot/
+
+# React build output (published fresh by the BuildWebApp msbuild target)
+web/dist/
+
+# synced from ../tokens.css by web/scripts/sync-tokens.mjs — tokens.json/
+# tokens.css at the repo root stay the single source of truth
+web/src/styles/tokens.css
+
+# local dev secrets / IDE
+*.user
+.vs/
