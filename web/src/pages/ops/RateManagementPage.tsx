@@ -122,6 +122,9 @@ export function RateManagementPage() {
           <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
             Import CSV
           </Button>
+          <a className="btn btn-outline" href="/templates/rates-import-template.csv" download>
+            Download template
+          </a>
           <Button
             onClick={() => {
               setEditing(null)
