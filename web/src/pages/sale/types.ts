@@ -39,6 +39,24 @@ export interface Quotation {
   approvedAt: string | null
   sentAt: string | null
   expiresAt: string
+
+  // Modular & Optional Sections
+  transitTime?: string | null
+  frequency?: string | null
+  closingSchedule?: string | null
+  carrierInfo?: string | null
+  paymentTerms?: string | null
+  insuranceStatus?: string | null
+  termsAndConditions?: string | null
+  dimensionsJson?: string | null
+}
+
+export interface QuotationDimensionItem {
+  quantity: number
+  lengthCm: number
+  widthCm: number
+  heightCm: number
+  grossWeightKg: number
 }
 
 export interface QuotationLine {

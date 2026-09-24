@@ -50,4 +50,14 @@ public class Quotation
     public DateTime? ApprovedAt { get; set; }
     public DateTime? SentAt { get; set; }
     public DateTime ExpiresAt { get; set; } // created_at + 30 days, confirmed with Operation
+
+    // Modular & Optional Sections (added by Sale/Operations as needed)
+    public string? TransitTime { get; set; } // e.g. "3-5 Days"
+    public string? Frequency { get; set; } // e.g. "Weekly (Wed/Fri)"
+    public string? ClosingSchedule { get; set; } // e.g. "Closing export entry & VGM within Friday"
+    public string? CarrierInfo { get; set; } // e.g. "MSC / Hapag" or "Cargolux"
+    public string? PaymentTerms { get; set; } // e.g. "Credit 30 Days", "15 days from invoice date"
+    public string? InsuranceStatus { get; set; } // e.g. "Declined", "Included", "Optional"
+    public string? TermsAndConditions { get; set; } // Custom or preset disclaimer / T&C
+    public string? DimensionsJson { get; set; } // JSON array of package dimension items
 }

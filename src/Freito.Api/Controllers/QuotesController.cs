@@ -92,7 +92,14 @@ public sealed class QuotesController(FreitoDbContext db, QuotationService quotes
         var rejection = RequireActor(out var actorId, UserRole.Sale, UserRole.Admin);
         if (rejection is not null) return rejection;
 
-        var result = await quotes.UpdateLinesAsync(id, actorId, request.Lines, request.FinalPrice, request.Note, cancellationToken);
+        var result = await quotes.UpdateLinesAsync(
+            id, actorId, request.Lines, request.FinalPrice, request.Note, cancellationToken,
+            request.TransitTime, request.Frequency, request.ClosingSchedule, request.CarrierInfo,
+            request.PaymentTerms, request.InsuranceStatus, request.TermsAndConditions, request.DimensionsJson,
+            request.CustomerName, request.CustomerCompany, request.CustomerEmail, request.CustomerPhone,
+            request.OriginPortId, request.DestinationPortId, request.Direction, request.Mode,
+            request.CargoTypeId, request.Qty, request.ContainerSize, request.Cbm, request.WeightKg,
+            request.IncotermCode, request.ReadyDate);
         return result.Outcome switch
         {
             QuotationActionOutcome.NotFound => NotFound(),
@@ -113,7 +120,14 @@ public sealed class QuotesController(FreitoDbContext db, QuotationService quotes
         var rejection = RequireActor(out var actorId, UserRole.Sale, UserRole.Admin);
         if (rejection is not null) return rejection;
 
-        var result = await quotes.ApproveAsync(id, actorId, request.FinalPrice, request.Note, cancellationToken, request.Lines);
+        var result = await quotes.ApproveAsync(
+            id, actorId, request.FinalPrice, request.Note, cancellationToken, request.Lines,
+            request.TransitTime, request.Frequency, request.ClosingSchedule, request.CarrierInfo,
+            request.PaymentTerms, request.InsuranceStatus, request.TermsAndConditions, request.DimensionsJson,
+            request.CustomerName, request.CustomerCompany, request.CustomerEmail, request.CustomerPhone,
+            request.OriginPortId, request.DestinationPortId, request.Direction, request.Mode,
+            request.CargoTypeId, request.Qty, request.ContainerSize, request.Cbm, request.WeightKg,
+            request.IncotermCode, request.ReadyDate);
         return result.Outcome switch
         {
             QuotationActionOutcome.NotFound => NotFound(),

@@ -63,9 +63,9 @@ public sealed class QuotationPdfDocument(QuotationPdfModel model) : IDocument
 
     private void ComposeContent(IContainer container)
     {
-        container.PaddingTop(20).Column(column =>
+        container.PaddingTop(16).Column(column =>
         {
-            column.Spacing(16);
+            column.Spacing(12);
 
             column.Item().Row(row =>
             {
@@ -81,6 +81,12 @@ public sealed class QuotationPdfDocument(QuotationPdfModel model) : IDocument
                     $"Ready date: {FormatDate(model.ReadyDate)}",
                 ]));
             });
+
+            // Modular section: Schedule and commercial terms (only rendered if present)
+            column.Item().Element(ComposeScheduleAndTerms);
+
+            // Modular section: Cargo dimensions (only rendered if present)
+            column.Item().Element(ComposeDimensionsTable);
 
             column.Item().Element(ComposeLineItemsTable);
 
@@ -108,16 +114,143 @@ public sealed class QuotationPdfDocument(QuotationPdfModel model) : IDocument
                 });
             });
 
+            // Modular section: Terms & conditions (only rendered if present)
+            column.Item().Element(ComposeTermsAndConditions);
+
             if (model.ApprovedByName is not null)
             {
                 column.Item().Text($"Approved by {model.ApprovedByName} on {FormatDate(model.ApprovedAt)}")
                     .FontSize(9).FontColor(Colors.Grey.Medium);
             }
 
-            column.Item().PaddingTop(10).Text(
-                "This is a draft price based on rates in effect at the time of calculation and is not a binding contract. " +
+            column.Item().PaddingTop(4).Text(
+                "This quotation is based on rates in effect at the time of calculation. " +
                 "Final charges may vary based on actual cargo details and destination charges at the time of shipment.")
                 .FontSize(8).FontColor(Colors.Grey.Medium).Italic();
+        });
+    }
+
+    private void ComposeScheduleAndTerms(IContainer container)
+    {
+        var scheduleItems = new List<string>();
+        if (!string.IsNullOrWhiteSpace(model.CarrierInfo)) scheduleItems.Add($"Carrier: {model.CarrierInfo}");
+        if (!string.IsNullOrWhiteSpace(model.TransitTime)) scheduleItems.Add($"Transit time: {model.TransitTime}");
+        if (!string.IsNullOrWhiteSpace(model.Frequency)) scheduleItems.Add($"Frequency: {model.Frequency}");
+        if (!string.IsNullOrWhiteSpace(model.ClosingSchedule)) scheduleItems.Add($"Closing/Cut-off: {model.ClosingSchedule}");
+
+        var commercialItems = new List<string>();
+        if (!string.IsNullOrWhiteSpace(model.PaymentTerms)) commercialItems.Add($"Payment terms: {model.PaymentTerms}");
+        if (!string.IsNullOrWhiteSpace(model.InsuranceStatus)) commercialItems.Add($"Cargo insurance: {model.InsuranceStatus}");
+
+        if (scheduleItems.Count == 0 && commercialItems.Count == 0) return;
+
+        container.Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
+        {
+            if (scheduleItems.Count > 0)
+            {
+                row.RelativeItem().Component(new InfoBlockComponent("Routing & Schedule", scheduleItems));
+            }
+            if (commercialItems.Count > 0)
+            {
+                row.RelativeItem().Component(new InfoBlockComponent("Commercial Terms", commercialItems));
+            }
+        });
+    }
+
+    private void ComposeDimensionsTable(IContainer container)
+    {
+        if (string.IsNullOrWhiteSpace(model.DimensionsJson)) return;
+
+        List<QuotationDimensionItem>? items = null;
+        try
+        {
+            items = System.Text.Json.JsonSerializer.Deserialize<List<QuotationDimensionItem>>(
+                model.DimensionsJson,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch
+        {
+            return;
+        }
+
+        if (items is not { Count: > 0 }) return;
+
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Text("Cargo Dimensions & Packing Details").FontSize(9).Bold().FontColor(BrandColor);
+
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(columns =>
+                {
+                    columns.RelativeColumn(1);
+                    columns.RelativeColumn(3);
+                    columns.RelativeColumn(2);
+                    columns.RelativeColumn(2);
+                });
+
+                table.Header(header =>
+                {
+                    header.Cell().Element(HeaderCell).Text("Qty");
+                    header.Cell().Element(HeaderCell).Text("Dimensions (L × W × H cm)");
+                    header.Cell().Element(HeaderCell).AlignRight().Text("Volume (m³)");
+                    header.Cell().Element(HeaderCell).AlignRight().Text("Gross Weight (kg)");
+                });
+
+                decimal totalCbm = 0;
+                decimal totalWeight = 0;
+                int totalQty = 0;
+
+                foreach (var item in items)
+                {
+                    var cbm = (item.LengthCm * item.WidthCm * item.HeightCm / 1_000_000m) * item.Quantity;
+                    totalCbm += cbm;
+                    totalWeight += item.GrossWeightKg;
+                    totalQty += item.Quantity;
+
+                    table.Cell().Element(BodyCell).Text($"{item.Quantity}");
+                    table.Cell().Element(BodyCell).Text($"{item.LengthCm:N0} × {item.WidthCm:N0} × {item.HeightCm:N0} cm");
+                    table.Cell().Element(BodyCell).AlignRight().Text($"{cbm:N3} m³");
+                    table.Cell().Element(BodyCell).AlignRight().Text($"{item.GrossWeightKg:N1} kg");
+                }
+
+                table.Cell().Element(SummaryCell).Text($"Total: {totalQty}").Bold();
+                table.Cell().Element(SummaryCell).Text("");
+                table.Cell().Element(SummaryCell).AlignRight().Text($"{totalCbm:N3} m³").Bold();
+                table.Cell().Element(SummaryCell).AlignRight().Text($"{totalWeight:N1} kg").Bold();
+
+                static IContainer HeaderCell(IContainer c) =>
+                    c.Background(Colors.Grey.Lighten2).Padding(4).DefaultTextStyle(x => x.FontSize(8).Bold());
+
+                static IContainer BodyCell(IContainer c) =>
+                    c.BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(4).DefaultTextStyle(x => x.FontSize(8));
+
+                static IContainer SummaryCell(IContainer c) =>
+                    c.Background(Colors.Grey.Lighten4).Padding(4).DefaultTextStyle(x => x.FontSize(8));
+            });
+        });
+    }
+
+    private void ComposeTermsAndConditions(IContainer container)
+    {
+        if (string.IsNullOrWhiteSpace(model.TermsAndConditions)) return;
+
+        container.Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.Grey.Lighten4).Padding(8).Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Text("Terms & Conditions").FontSize(9).Bold().FontColor(BrandColor);
+            var lines = model.TermsAndConditions.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim();
+                if (trimmed.Length == 0) continue;
+                col.Item().Row(r =>
+                {
+                    r.ConstantItem(12).Text("•").FontSize(8).FontColor(Colors.Grey.Darken1);
+                    r.RelativeItem().Text(trimmed.TrimStart('•', '-', '*').Trim()).FontSize(8).FontColor(Colors.Grey.Darken2);
+                });
+            }
         });
     }
 

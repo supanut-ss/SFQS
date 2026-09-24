@@ -17,6 +17,10 @@ public sealed record QuotationPdfResult(QuotationPdfOutcome Outcome, byte[]? Byt
 
 public sealed class QuotationPdfService(FreitoDbContext db)
 {
+    static QuotationPdfService()
+    {
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+    }
     /// <summary>
     /// Only ApprovedAndSent/Confirmed quotes can be downloaded — a Draft or PendingSaleApproval
     /// price is exactly what the approval gate (AC3, requirements.md §6) exists to keep away
@@ -61,7 +65,15 @@ public sealed class QuotationPdfService(FreitoDbContext db)
             DiscountAmount: quotation.DiscountAmount,
             FinalPrice: quotation.FinalPrice,
             ApprovedByName: approver?.Email,
-            ApprovedAt: quotation.ApprovedAt);
+            ApprovedAt: quotation.ApprovedAt,
+            TransitTime: quotation.TransitTime,
+            Frequency: quotation.Frequency,
+            ClosingSchedule: quotation.ClosingSchedule,
+            CarrierInfo: quotation.CarrierInfo,
+            PaymentTerms: quotation.PaymentTerms,
+            InsuranceStatus: quotation.InsuranceStatus,
+            TermsAndConditions: quotation.TermsAndConditions,
+            DimensionsJson: quotation.DimensionsJson);
 
         var bytes = new QuotationPdfDocument(model).GeneratePdf();
         return new QuotationPdfResult(QuotationPdfOutcome.Success, bytes, $"{quotation.QuoteNo}.pdf");

@@ -265,7 +265,30 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
         IReadOnlyList<QuoteLineItemDto> lines,
         decimal? finalPrice,
         string? note,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? transitTime = null,
+        string? frequency = null,
+        string? closingSchedule = null,
+        string? carrierInfo = null,
+        string? paymentTerms = null,
+        string? insuranceStatus = null,
+        string? termsAndConditions = null,
+        string? dimensionsJson = null,
+        string? customerName = null,
+        string? customerCompany = null,
+        string? customerEmail = null,
+        string? customerPhone = null,
+        int? originPortId = null,
+        int? destinationPortId = null,
+        ShipmentDirection? direction = null,
+        TransportMode? mode = null,
+        int? cargoTypeId = null,
+        int? qty = null,
+        string? containerSize = null,
+        decimal? cbm = null,
+        decimal? weightKg = null,
+        string? incotermCode = null,
+        DateTime? readyDate = null)
     {
         var quotation = await db.Quotations.FirstOrDefaultAsync(q => q.Id == quotationId, cancellationToken);
         if (quotation is null) return new QuotationActionResult(QuotationActionOutcome.NotFound);
@@ -308,6 +331,35 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
             quotation.DiscountAmount = 0;
         }
 
+        // Customer edits
+        if (!string.IsNullOrWhiteSpace(customerName)) quotation.CustomerName = customerName.Trim();
+        if (customerCompany is not null) quotation.CustomerCompany = string.IsNullOrWhiteSpace(customerCompany) ? null : customerCompany.Trim();
+        if (!string.IsNullOrWhiteSpace(customerEmail)) quotation.CustomerEmail = customerEmail.Trim();
+        if (!string.IsNullOrWhiteSpace(customerPhone)) quotation.CustomerPhone = customerPhone.Trim();
+
+        // Shipment edits
+        if (originPortId.HasValue && originPortId.Value > 0) quotation.OriginPortId = originPortId.Value;
+        if (destinationPortId.HasValue && destinationPortId.Value > 0) quotation.DestinationPortId = destinationPortId.Value;
+        if (direction.HasValue) quotation.Direction = direction.Value;
+        if (mode.HasValue) quotation.Mode = mode.Value;
+        if (cargoTypeId.HasValue && cargoTypeId.Value > 0) quotation.CargoTypeId = cargoTypeId.Value;
+        if (qty.HasValue && qty.Value > 0) quotation.Qty = qty.Value;
+        if (containerSize is not null) quotation.ContainerSize = string.IsNullOrWhiteSpace(containerSize) ? null : containerSize.Trim().ToUpperInvariant();
+        if (cbm.HasValue) quotation.Cbm = cbm.Value;
+        if (weightKg.HasValue) quotation.WeightKg = weightKg.Value;
+        if (!string.IsNullOrWhiteSpace(incotermCode)) quotation.IncotermCode = incotermCode.Trim().ToUpperInvariant();
+        if (readyDate.HasValue) quotation.ReadyDate = DateTime.SpecifyKind(readyDate.Value.Date, DateTimeKind.Utc);
+
+        // Modular optional section fields
+        if (transitTime is not null) quotation.TransitTime = transitTime.Trim();
+        if (frequency is not null) quotation.Frequency = frequency.Trim();
+        if (closingSchedule is not null) quotation.ClosingSchedule = closingSchedule.Trim();
+        if (carrierInfo is not null) quotation.CarrierInfo = carrierInfo.Trim();
+        if (paymentTerms is not null) quotation.PaymentTerms = paymentTerms.Trim();
+        if (insuranceStatus is not null) quotation.InsuranceStatus = insuranceStatus.Trim();
+        if (termsAndConditions is not null) quotation.TermsAndConditions = termsAndConditions.Trim();
+        if (dimensionsJson is not null) quotation.DimensionsJson = dimensionsJson.Trim();
+
         if (!string.IsNullOrWhiteSpace(note))
         {
             db.QuotationStatusHistory.Add(new QuotationStatusHistory
@@ -336,11 +388,45 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
         decimal? finalPrice,
         string? note,
         CancellationToken cancellationToken,
-        IReadOnlyList<QuoteLineItemDto>? lines = null)
+        IReadOnlyList<QuoteLineItemDto>? lines = null,
+        string? transitTime = null,
+        string? frequency = null,
+        string? closingSchedule = null,
+        string? carrierInfo = null,
+        string? paymentTerms = null,
+        string? insuranceStatus = null,
+        string? termsAndConditions = null,
+        string? dimensionsJson = null,
+        string? customerName = null,
+        string? customerCompany = null,
+        string? customerEmail = null,
+        string? customerPhone = null,
+        int? originPortId = null,
+        int? destinationPortId = null,
+        ShipmentDirection? direction = null,
+        TransportMode? mode = null,
+        int? cargoTypeId = null,
+        int? qty = null,
+        string? containerSize = null,
+        decimal? cbm = null,
+        decimal? weightKg = null,
+        string? incotermCode = null,
+        DateTime? readyDate = null)
     {
-        if (lines is { Count: > 0 })
+        var hasEdits = lines is { Count: > 0 } || transitTime is not null || frequency is not null || closingSchedule is not null ||
+            carrierInfo is not null || paymentTerms is not null || insuranceStatus is not null || termsAndConditions is not null || dimensionsJson is not null ||
+            customerName is not null || customerCompany is not null || customerEmail is not null || customerPhone is not null ||
+            originPortId is not null || destinationPortId is not null || direction is not null || mode is not null ||
+            cargoTypeId is not null || qty is not null || containerSize is not null || cbm is not null || weightKg is not null ||
+            incotermCode is not null || readyDate is not null;
+
+        if (hasEdits)
         {
-            var updateResult = await UpdateLinesAsync(quotationId, actorId, lines, finalPrice, null, cancellationToken);
+            var updateResult = await UpdateLinesAsync(
+                quotationId, actorId, lines ?? [], finalPrice, null, cancellationToken,
+                transitTime, frequency, closingSchedule, carrierInfo, paymentTerms, insuranceStatus, termsAndConditions, dimensionsJson,
+                customerName, customerCompany, customerEmail, customerPhone, originPortId, destinationPortId, direction, mode,
+                cargoTypeId, qty, containerSize, cbm, weightKg, incotermCode, readyDate);
             if (updateResult.Outcome != QuotationActionOutcome.Success)
                 return updateResult;
         }

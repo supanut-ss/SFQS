@@ -120,6 +120,49 @@ public sealed class UpdateQuoteLinesRequest
     public decimal? FinalPrice { get; init; }
     [StringLength(1000)]
     public string? Note { get; init; }
+
+    // Customer edits
+    [StringLength(160)]
+    public string? CustomerName { get; init; }
+    [StringLength(160)]
+    public string? CustomerCompany { get; init; }
+    [EmailAddress, StringLength(254)]
+    public string? CustomerEmail { get; init; }
+    [StringLength(50)]
+    public string? CustomerPhone { get; init; }
+
+    // Shipment edits
+    public int? OriginPortId { get; init; }
+    public int? DestinationPortId { get; init; }
+    public ShipmentDirection? Direction { get; init; }
+    public TransportMode? Mode { get; init; }
+    public int? CargoTypeId { get; init; }
+    public int? Qty { get; init; }
+    [StringLength(16)]
+    public string? ContainerSize { get; init; }
+    public decimal? Cbm { get; init; }
+    public decimal? WeightKg { get; init; }
+    [StringLength(3)]
+    public string? IncotermCode { get; init; }
+    public DateTime? ReadyDate { get; init; }
+
+    // Modular optional sections
+    [StringLength(100)]
+    public string? TransitTime { get; init; }
+    [StringLength(100)]
+    public string? Frequency { get; init; }
+    [StringLength(200)]
+    public string? ClosingSchedule { get; init; }
+    [StringLength(150)]
+    public string? CarrierInfo { get; init; }
+    [StringLength(150)]
+    public string? PaymentTerms { get; init; }
+    [StringLength(100)]
+    public string? InsuranceStatus { get; init; }
+    [StringLength(4000)]
+    public string? TermsAndConditions { get; init; }
+    [StringLength(4000)]
+    public string? DimensionsJson { get; init; }
 }
 
 public sealed class ApproveQuoteRequest
@@ -131,6 +174,49 @@ public sealed class ApproveQuoteRequest
     public string? Note { get; init; }
 
     public List<QuoteLineItemDto>? Lines { get; init; }
+
+    // Customer edits
+    [StringLength(160)]
+    public string? CustomerName { get; init; }
+    [StringLength(160)]
+    public string? CustomerCompany { get; init; }
+    [EmailAddress, StringLength(254)]
+    public string? CustomerEmail { get; init; }
+    [StringLength(50)]
+    public string? CustomerPhone { get; init; }
+
+    // Shipment edits
+    public int? OriginPortId { get; init; }
+    public int? DestinationPortId { get; init; }
+    public ShipmentDirection? Direction { get; init; }
+    public TransportMode? Mode { get; init; }
+    public int? CargoTypeId { get; init; }
+    public int? Qty { get; init; }
+    [StringLength(16)]
+    public string? ContainerSize { get; init; }
+    public decimal? Cbm { get; init; }
+    public decimal? WeightKg { get; init; }
+    [StringLength(3)]
+    public string? IncotermCode { get; init; }
+    public DateTime? ReadyDate { get; init; }
+
+    // Modular optional sections
+    [StringLength(100)]
+    public string? TransitTime { get; init; }
+    [StringLength(100)]
+    public string? Frequency { get; init; }
+    [StringLength(200)]
+    public string? ClosingSchedule { get; init; }
+    [StringLength(150)]
+    public string? CarrierInfo { get; init; }
+    [StringLength(150)]
+    public string? PaymentTerms { get; init; }
+    [StringLength(100)]
+    public string? InsuranceStatus { get; init; }
+    [StringLength(4000)]
+    public string? TermsAndConditions { get; init; }
+    [StringLength(4000)]
+    public string? DimensionsJson { get; init; }
 }
 
 public sealed class RejectQuoteRequest

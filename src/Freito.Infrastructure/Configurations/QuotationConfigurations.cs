@@ -63,6 +63,14 @@ internal sealed class QuotationConfiguration : IEntityTypeConfiguration<Quotatio
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(24).IsRequired();
         builder.Property(x => x.ReadyDate).IsRequired();
         builder.Property(x => x.ExpiresAt).IsRequired();
+        builder.Property(x => x.TransitTime).HasMaxLength(100);
+        builder.Property(x => x.Frequency).HasMaxLength(100);
+        builder.Property(x => x.ClosingSchedule).HasMaxLength(200);
+        builder.Property(x => x.CarrierInfo).HasMaxLength(150);
+        builder.Property(x => x.PaymentTerms).HasMaxLength(150);
+        builder.Property(x => x.InsuranceStatus).HasMaxLength(100);
+        builder.Property(x => x.TermsAndConditions).HasMaxLength(4000);
+        builder.Property(x => x.DimensionsJson).HasMaxLength(4000);
         builder.HasOne<Port>().WithMany().HasForeignKey(x => x.OriginPortId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Port>().WithMany().HasForeignKey(x => x.DestinationPortId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<CargoType>().WithMany().HasForeignKey(x => x.CargoTypeId).OnDelete(DeleteBehavior.Restrict);

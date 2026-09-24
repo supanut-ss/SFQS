@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Button, EmptyState, Input, Skeleton, Table, useToast } from '../../components/ui'
+import { Button, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { formatMoney } from '../../lib/format'
+import type { ShipmentDirection, TransportMode } from '../ops/types'
+import { useMasterData } from '../quote/useMasterData'
+import { ModularQuotationSections, type ModularSectionsState } from './ModularQuotationSections'
 import { StatusBadge } from './statusBadge'
-import type { QuotationDetail, QuotationLine, RefreshRateResponse } from './types'
+import type { QuotationDetail, QuotationDimensionItem, QuotationLine, RefreshRateResponse } from './types'
 
 export interface QuotationDetailPageProps {
   id: number
@@ -23,6 +26,7 @@ interface EditableLine {
  * editable line items (free customization per real operations worksheet), an editable final
  * price, an approval note, and the Reject/Approve pair. */
 export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
+  const masterData = useMasterData()
   const [detail, setDetail] = useState<QuotationDetail | null>(null)
   const [editableLines, setEditableLines] = useState<EditableLine[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,6 +37,40 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
   const [finalPrice, setFinalPrice] = useState('')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
+
+  // Customer & Shipment parameters editable by Sale
+  const [isEditingParameters, setIsEditingParameters] = useState(false)
+  const [customerName, setCustomerName] = useState('')
+  const [customerCompany, setCustomerCompany] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+
+  const [originPortId, setOriginPortId] = useState<number>(0)
+  const [destinationPortId, setDestinationPortId] = useState<number>(0)
+  const [direction, setDirection] = useState<ShipmentDirection>('import')
+  const [mode, setMode] = useState<TransportMode>('lcl')
+  const [incotermCode, setIncotermCode] = useState('')
+  const [readyDate, setReadyDate] = useState('')
+  const [containerSize, setContainerSize] = useState('20')
+  const [qty, setQty] = useState(1)
+  const [cbm, setCbm] = useState('')
+  const [weightKg, setWeightKg] = useState('')
+
+  const [modularState, setModularState] = useState<ModularSectionsState>({
+    showSchedule: false,
+    transitTime: '',
+    frequency: '',
+    closingSchedule: '',
+    carrierInfo: '',
+    showDimensions: false,
+    dimensionItems: [],
+    showPayment: false,
+    paymentTerms: '',
+    showInsurance: false,
+    insuranceStatus: '',
+    showTerms: false,
+    termsAndConditions: '',
+  })
   const toast = useToast()
 
   const load = () => {
@@ -52,6 +90,51 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
           }))
         )
         setFinalPrice(res.quotation.finalPrice.toString())
+
+        // Populate customer & shipment fields
+        setCustomerName(res.quotation.customerName ?? '')
+        setCustomerCompany(res.quotation.customerCompany ?? '')
+        setCustomerEmail(res.quotation.customerEmail ?? '')
+        setCustomerPhone(res.quotation.customerPhone ?? '')
+        setOriginPortId(res.quotation.originPortId)
+        setDestinationPortId(res.quotation.destinationPortId)
+        setDirection(res.quotation.direction)
+        setMode(res.quotation.mode)
+        setIncotermCode(res.quotation.incotermCode)
+        setReadyDate(res.quotation.readyDate ? res.quotation.readyDate.slice(0, 10) : '')
+        setContainerSize(res.quotation.containerSize ?? '20')
+        setQty(res.quotation.qty || 1)
+        setCbm(res.quotation.cbm != null ? res.quotation.cbm.toString() : '')
+        setWeightKg(res.quotation.weightKg != null ? res.quotation.weightKg.toString() : '')
+
+        let parsedDimensions: QuotationDimensionItem[] = []
+        if (res.quotation.dimensionsJson) {
+          try {
+            parsedDimensions = JSON.parse(res.quotation.dimensionsJson)
+          } catch {
+            parsedDimensions = []
+          }
+        }
+        setModularState({
+          showSchedule: !!(
+            res.quotation.transitTime ||
+            res.quotation.frequency ||
+            res.quotation.closingSchedule ||
+            res.quotation.carrierInfo
+          ),
+          transitTime: res.quotation.transitTime ?? '',
+          frequency: res.quotation.frequency ?? '',
+          closingSchedule: res.quotation.closingSchedule ?? '',
+          carrierInfo: res.quotation.carrierInfo ?? '',
+          showDimensions: parsedDimensions.length > 0,
+          dimensionItems: parsedDimensions,
+          showPayment: !!res.quotation.paymentTerms,
+          paymentTerms: res.quotation.paymentTerms ?? '',
+          showInsurance: !!res.quotation.insuranceStatus,
+          insuranceStatus: res.quotation.insuranceStatus ?? '',
+          showTerms: !!res.quotation.termsAndConditions,
+          termsAndConditions: res.quotation.termsAndConditions ?? '',
+        })
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : 'Failed to load quotation'))
       .finally(() => setLoading(false))
@@ -111,10 +194,41 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
     setSavingLines(true)
     try {
       const formatted = formatLinesForPayload()
+      const customerShipmentPayload = {
+        customerName: customerName.trim() || undefined,
+        customerCompany: customerCompany.trim() || undefined,
+        customerEmail: customerEmail.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
+        originPortId: Number(originPortId) || undefined,
+        destinationPortId: Number(destinationPortId) || undefined,
+        direction,
+        mode,
+        incotermCode: incotermCode.toUpperCase(),
+        readyDate: readyDate || undefined,
+        containerSize: mode === 'fcl' ? containerSize : undefined,
+        qty: Number(qty) || 1,
+        cbm: cbm ? Number(cbm) : undefined,
+        weightKg: weightKg ? Number(weightKg) : undefined,
+      }
+      const modularPayload = {
+        transitTime: modularState.showSchedule ? modularState.transitTime.trim() || null : null,
+        frequency: modularState.showSchedule ? modularState.frequency.trim() || null : null,
+        closingSchedule: modularState.showSchedule ? modularState.closingSchedule.trim() || null : null,
+        carrierInfo: modularState.showSchedule ? modularState.carrierInfo.trim() || null : null,
+        paymentTerms: modularState.showPayment ? modularState.paymentTerms.trim() || null : null,
+        insuranceStatus: modularState.showInsurance ? modularState.insuranceStatus.trim() || null : null,
+        termsAndConditions: modularState.showTerms ? modularState.termsAndConditions.trim() || null : null,
+        dimensionsJson:
+          modularState.showDimensions && modularState.dimensionItems.length > 0
+            ? JSON.stringify(modularState.dimensionItems)
+            : null,
+      }
       const res = await api.put<QuotationDetail>(`/api/quotes/${id}/lines`, {
         lines: formatted,
         finalPrice: finalPrice ? Number(finalPrice) : computedSubtotal,
         note: note.trim() || undefined,
+        ...customerShipmentPayload,
+        ...modularPayload,
       })
       setDetail(res)
       setEditableLines(
@@ -127,7 +241,7 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
         }))
       )
       setFinalPrice(res.quotation.finalPrice.toString())
-      toast.show('Quotation lines updated', 'success')
+      toast.show('Quotation updated', 'success')
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to save lines', 'destructive')
     } finally {
@@ -152,10 +266,41 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
     setBusy(true)
     try {
       const formatted = canDecide ? formatLinesForPayload() : undefined
+      const customerShipmentPayload = {
+        customerName: customerName.trim() || undefined,
+        customerCompany: customerCompany.trim() || undefined,
+        customerEmail: customerEmail.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
+        originPortId: Number(originPortId) || undefined,
+        destinationPortId: Number(destinationPortId) || undefined,
+        direction,
+        mode,
+        incotermCode: incotermCode.toUpperCase(),
+        readyDate: readyDate || undefined,
+        containerSize: mode === 'fcl' ? containerSize : undefined,
+        qty: Number(qty) || 1,
+        cbm: cbm ? Number(cbm) : undefined,
+        weightKg: weightKg ? Number(weightKg) : undefined,
+      }
+      const modularPayload = {
+        transitTime: modularState.showSchedule ? modularState.transitTime.trim() || null : null,
+        frequency: modularState.showSchedule ? modularState.frequency.trim() || null : null,
+        closingSchedule: modularState.showSchedule ? modularState.closingSchedule.trim() || null : null,
+        carrierInfo: modularState.showSchedule ? modularState.carrierInfo.trim() || null : null,
+        paymentTerms: modularState.showPayment ? modularState.paymentTerms.trim() || null : null,
+        insuranceStatus: modularState.showInsurance ? modularState.insuranceStatus.trim() || null : null,
+        termsAndConditions: modularState.showTerms ? modularState.termsAndConditions.trim() || null : null,
+        dimensionsJson:
+          modularState.showDimensions && modularState.dimensionItems.length > 0
+            ? JSON.stringify(modularState.dimensionItems)
+            : null,
+      }
       await api.post(`/api/quotes/${id}/approve`, {
         finalPrice: finalPrice ? Number(finalPrice) : computedSubtotal,
         note: note || undefined,
         lines: formatted,
+        ...customerShipmentPayload,
+        ...modularPayload,
       })
       toast.show('Quotation approved', 'success')
       load()
@@ -164,6 +309,27 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
     } finally {
       setBusy(false)
     }
+  }
+
+  const handleApplyRefreshedRate = () => {
+    if (!delta || !detail) return
+    const newLines: EditableLine[] = [
+      {
+        description: 'Freight',
+        basis: 'Refreshed rate',
+        amount: delta.currentFreightCost,
+        currency: delta.currency,
+      },
+      ...delta.localChargeDeltas.map((l) => ({
+        description: l.chargeType,
+        basis: 'Local charge',
+        amount: l.currentAmount,
+        currency: delta.currency,
+      })),
+    ]
+    setEditableLines(newLines)
+    setFinalPrice(delta.currentSubtotal.toString())
+    toast.show('Applied refreshed rates to quotation lines', 'success')
   }
 
   const handleSend = async () => {
@@ -219,6 +385,12 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
   const isApproved = quotation.status === 'approved'
   const isSent = quotation.status === 'approvedAndSent'
 
+  const allPorts = [...masterData.seaPorts, ...masterData.airPorts]
+  const originPortObj = allPorts.find((p) => p.id === originPortId)
+  const destPortObj = allPorts.find((p) => p.id === destinationPortId)
+  const originPortLabel = originPortObj ? `${originPortObj.name} (${originPortObj.code})` : `Port #${originPortId}`
+  const destPortLabel = destPortObj ? `${destPortObj.name} (${destPortObj.code})` : `Port #${destinationPortId}`
+
   return (
     <div className="flex flex-col gap-4 w-full max-w-3xl">
       <button type="button" className="text-sm underline text-muted-foreground self-start" onClick={onBack}>
@@ -231,20 +403,177 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
       </div>
 
       <div className="quote-form flex flex-col gap-4">
-        <div className="form-row">
-          <div>
-            <p className="text-xs text-muted-foreground font-semibold">Customer</p>
-            <p className="text-sm">{quotation.customerName}</p>
-            <p className="text-sm text-muted-foreground">{quotation.customerEmail}</p>
-            <p className="text-sm text-muted-foreground">{quotation.customerPhone}</p>
+        {/* Customer & Shipment Parameters (Editable by Sale) */}
+        <div className="border border-border/80 rounded-md p-3.5 bg-muted/15 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <span>📋</span>
+              <span>Customer & Shipment Parameters</span>
+            </span>
+            {canDecide && (
+              <Button
+                type="button"
+                variant="outline"
+                className="text-xs py-0.5 px-2.5"
+                onClick={() => setIsEditingParameters(!isEditingParameters)}
+              >
+                {isEditingParameters ? 'Close Edit Form' : '✎ Edit Parameters'}
+              </Button>
+            )}
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground font-semibold">Shipment</p>
-            <p className="text-sm">
-              {quotation.mode.toUpperCase()} • {quotation.direction} • {quotation.incotermCode}
-            </p>
-            <p className="text-sm text-muted-foreground">Ready date: {quotation.readyDate.slice(0, 10)}</p>
-          </div>
+
+          {!isEditingParameters ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <p className="text-muted-foreground text-[10px] uppercase font-semibold">Customer</p>
+                <p className="text-sm font-medium mt-0.5">
+                  {customerName} {customerCompany ? `(${customerCompany})` : ''}
+                </p>
+                <p className="text-muted-foreground">{customerEmail}</p>
+                <p className="text-muted-foreground">{customerPhone}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-[10px] uppercase font-semibold">Shipment</p>
+                <p className="text-sm font-medium mt-0.5">
+                  {originPortLabel} → {destPortLabel}
+                </p>
+                <p className="text-muted-foreground">
+                  {mode.toUpperCase()} • {direction} • {incotermCode} • Ready: {readyDate || '-'}
+                </p>
+                <p className="text-muted-foreground font-medium mt-0.5">
+                  {mode === 'fcl' && `Container: ${qty} × ${containerSize}'`}
+                  {mode === 'lcl' && `Volume: ${cbm || '-'} CBM, Weight: ${weightKg || '-'} kg`}
+                  {mode === 'air' && `Weight: ${weightKg || '-'} kg, Volume: ${cbm || '-'} CBM`}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
+              <p className="text-xs text-muted-foreground">
+                Edit the parameters submitted by the customer. Saving will update the quotation record and PDF.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <Input
+                  label="Customer Name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+                <Input
+                  label="Company Name"
+                  placeholder="Optional"
+                  value={customerCompany}
+                  onChange={(e) => setCustomerCompany(e.target.value)}
+                />
+                <Input
+                  label="Customer Email"
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                />
+                <Input
+                  label="Customer Phone"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <Select
+                  label="Mode"
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value as TransportMode)}
+                  options={[
+                    { value: 'fcl', label: 'FCL (Sea)' },
+                    { value: 'lcl', label: 'LCL (Sea)' },
+                    { value: 'air', label: 'Air Freight' },
+                  ]}
+                />
+                <Select
+                  label="Direction"
+                  value={direction}
+                  onChange={(e) => setDirection(e.target.value as ShipmentDirection)}
+                  options={[
+                    { value: 'import', label: 'Import' },
+                    { value: 'export', label: 'Export' },
+                  ]}
+                />
+                <Select
+                  label="Incoterm"
+                  value={incotermCode}
+                  onChange={(e) => setIncotermCode(e.target.value)}
+                  options={masterData.incoterms.map((i) => ({ value: i.code, label: `${i.code} - ${i.name}` }))}
+                />
+                <Input
+                  label="Ready Date"
+                  type="date"
+                  value={readyDate}
+                  onChange={(e) => setReadyDate(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <Select
+                  label="Origin Port / Airport"
+                  value={originPortId.toString()}
+                  onChange={(e) => setOriginPortId(Number(e.target.value))}
+                  options={(mode === 'air' ? masterData.airPorts : masterData.seaPorts).map((p) => ({
+                    value: p.id.toString(),
+                    label: `${p.name} (${p.code}) - ${p.country}`,
+                  }))}
+                />
+                <Select
+                  label="Destination Port / Airport"
+                  value={destinationPortId.toString()}
+                  onChange={(e) => setDestinationPortId(Number(e.target.value))}
+                  options={(mode === 'air' ? masterData.airPorts : masterData.seaPorts).map((p) => ({
+                    value: p.id.toString(),
+                    label: `${p.name} (${p.code}) - ${p.country}`,
+                  }))}
+                />
+              </div>
+
+              {mode === 'fcl' && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <Select
+                    label="Container Size"
+                    value={containerSize}
+                    onChange={(e) => setContainerSize(e.target.value)}
+                    options={[
+                      { value: '20', label: "20' Container" },
+                      { value: '40', label: "40' Container" },
+                      { value: '40HQ', label: "40' High Cube" },
+                    ]}
+                  />
+                  <Input
+                    label="Quantity"
+                    type="number"
+                    min="1"
+                    value={qty.toString()}
+                    onChange={(e) => setQty(Number(e.target.value) || 1)}
+                  />
+                </div>
+              )}
+
+              {(mode === 'lcl' || mode === 'air') && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <Input
+                    label="Volume (CBM)"
+                    type="number"
+                    step="0.001"
+                    value={cbm}
+                    onChange={(e) => setCbm(e.target.value)}
+                  />
+                  <Input
+                    label="Weight (kg)"
+                    type="number"
+                    step="0.1"
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {canDecide ? (
@@ -354,6 +683,12 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
           />
         )}
 
+        <ModularQuotationSections
+          editable={canDecide}
+          data={modularState}
+          onChange={(patch) => setModularState((prev) => ({ ...prev, ...patch }))}
+        />
+
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-muted-foreground font-medium">Subtotal</span>
           <p className="font-numeric font-bold text-2xl">{formatMoney(canDecide ? computedSubtotal : quotation.subtotal, quotation.quoteCurrency)}</p>
@@ -384,6 +719,16 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
               (now {formatMoney(delta.currentSubtotal, delta.currency)})
             </p>
             {!delta.currentRateFound && <p className="text-destructive">No system rate found anymore — price manually.</p>}
+            {canDecide && delta.currentRateFound && (
+              <Button
+                type="button"
+                variant="outline"
+                className="text-xs py-1 px-3 self-start mt-1.5"
+                onClick={handleApplyRefreshedRate}
+              >
+                Apply refreshed rates to quotation lines
+              </Button>
+            )}
           </div>
         )}
 

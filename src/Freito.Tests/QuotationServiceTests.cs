@@ -409,4 +409,90 @@ public class QuotationServiceTests
         var lines = await db.QuotationLines.Where(l => l.QuotationId == quotation.Id).ToListAsync();
         Assert.Equal(2, lines.Count);
     }
+
+    [Fact]
+    public async Task UpdateLinesAsync_WithModularSections_PersistsModularFieldsAndGeneratesPdf()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+        var pdfService = new QuotationPdfService(db);
+
+        const string dimensions = "[{\"quantity\":4,\"lengthCm\":183,\"widthCm\":106,\"heightCm\":220,\"grossWeightKg\":3294}]";
+        const string terms = "Rates based on standard service level\nFuel surcharge subject to change\nVAT not included";
+
+        var result = await service.UpdateLinesAsync(
+            quotation.Id,
+            actorId: 42,
+            lines: [new QuoteLineItemDto { Description = "Freight", Basis = "Flat", Amount = 500m, Currency = "USD" }],
+            finalPrice: 500m,
+            note: "Added modular sections",
+            cancellationToken: CancellationToken.None,
+            transitTime: "3-4 Days",
+            frequency: "Daily",
+            closingSchedule: "VGM within Friday",
+            carrierInfo: "Cargolux",
+            paymentTerms: "Credit 30 Days",
+            insuranceStatus: "Declined",
+            termsAndConditions: terms,
+            dimensionsJson: dimensions);
+
+        Assert.Equal(QuotationActionOutcome.Success, result.Outcome);
+        var updated = result.Quotation!;
+        Assert.Equal("3-4 Days", updated.TransitTime);
+        Assert.Equal("Daily", updated.Frequency);
+        Assert.Equal("VGM within Friday", updated.ClosingSchedule);
+        Assert.Equal("Cargolux", updated.CarrierInfo);
+        Assert.Equal("Credit 30 Days", updated.PaymentTerms);
+        Assert.Equal("Declined", updated.InsuranceStatus);
+        Assert.Equal(terms, updated.TermsAndConditions);
+        Assert.Equal(dimensions, updated.DimensionsJson);
+
+        // Approve and verify PDF generation with modular sections
+        var approveResult = await service.ApproveAsync(quotation.Id, actorId: 42, finalPrice: null, note: "Approve", cancellationToken: CancellationToken.None);
+        Assert.Equal(QuotationActionOutcome.Success, approveResult.Outcome);
+
+        var pdfResult = await pdfService.GeneratePdfAsync(quotation.Id, CancellationToken.None);
+        Assert.Equal(QuotationPdfOutcome.Success, pdfResult.Outcome);
+        Assert.NotNull(pdfResult.Bytes);
+        Assert.True(pdfResult.Bytes.Length > 0);
+    }
+
+    [Fact]
+    public async Task UpdateLinesAsync_WithCustomerAndShipmentEdits_PersistsEditsAndUpdatesRefreshRate()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+
+        var result = await service.UpdateLinesAsync(
+            quotation.Id,
+            actorId: 42,
+            lines: [new QuoteLineItemDto { Description = "Freight", Basis = "Flat", Amount = 600m, Currency = "USD" }],
+            finalPrice: 600m,
+            note: "Updated customer details and container size to 40",
+            cancellationToken: CancellationToken.None,
+            customerName: "Jane Forwarder",
+            customerCompany: "Global Cargo Ltd",
+            customerEmail: "jane@globalcargo.com",
+            customerPhone: "+66891234567",
+            containerSize: "40",
+            qty: 2,
+            incotermCode: "CIF");
+
+        Assert.Equal(QuotationActionOutcome.Success, result.Outcome);
+        var updated = result.Quotation!;
+        Assert.Equal("Jane Forwarder", updated.CustomerName);
+        Assert.Equal("Global Cargo Ltd", updated.CustomerCompany);
+        Assert.Equal("jane@globalcargo.com", updated.CustomerEmail);
+        Assert.Equal("+66891234567", updated.CustomerPhone);
+        Assert.Equal("40", updated.ContainerSize);
+        Assert.Equal(2, updated.Qty);
+        Assert.Equal("CIF", updated.IncotermCode);
+
+        // Verify RefreshRate runs with the updated parameters
+        var refreshDelta = await service.RefreshRateAsync(quotation.Id, CancellationToken.None);
+        Assert.NotNull(refreshDelta);
+        Assert.True(refreshDelta.CurrentRateFound);
+    }
 }

@@ -25,6 +25,16 @@ public sealed record QuotationPdfModel(
     decimal DiscountAmount,
     decimal FinalPrice,
     string? ApprovedByName,
-    DateTime? ApprovedAt);
+    DateTime? ApprovedAt,
+    string? TransitTime = null,
+    string? Frequency = null,
+    string? ClosingSchedule = null,
+    string? CarrierInfo = null,
+    string? PaymentTerms = null,
+    string? InsuranceStatus = null,
+    string? TermsAndConditions = null,
+    string? DimensionsJson = null);
 
 public sealed record QuotationPdfLine(string Description, string Basis, decimal Amount, string Currency);
+
+public sealed record QuotationDimensionItem(int Quantity, decimal LengthCm, decimal WidthCm, decimal HeightCm, decimal GrossWeightKg);
