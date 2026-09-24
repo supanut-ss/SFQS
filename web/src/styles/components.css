@@ -101,6 +101,13 @@
   border: 1px solid var(--color-destructive);
   color: var(--color-destructive);
 }
+.btn-destructive {
+  background: var(--color-destructive);
+  color: #ffffff;
+}
+.btn-destructive:hover:not(:disabled) {
+  opacity: 0.9;
+}
 .btn-success {
   background: var(--button-success-bg);
   color: var(--button-success-fg);

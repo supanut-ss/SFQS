@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Badge, Button, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
+import { Badge, Button, ConfirmDialog, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { LocalChargeFormDialog, type LocalChargeFormValues } from './LocalChargeFormDialog'
 import type { CsvImportResult, Currency, LocalCharge, Port } from './types'
@@ -27,6 +27,7 @@ export function LocalChargeManagementPage() {
   const [currencies, setCurrencies] = useState<Currency[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<LocalCharge | null>(null)
+  const [deletingCharge, setDeletingCharge] = useState<LocalCharge | null>(null)
   const [search, setSearch] = useState('')
   const [modeFilter, setModeFilter] = useState<'all' | 'fcl' | 'lcl' | 'air'>('all')
   const [directionFilter, setDirectionFilter] = useState<'all' | 'export' | 'import'>('all')
@@ -58,11 +59,12 @@ export function LocalChargeManagementPage() {
     }
   }
 
-  const handleDelete = async (charge: LocalCharge) => {
-    if (!confirm(`Delete the ${charge.chargeType} charge at ${portName(charge.portId)}?`)) return
+  const handleDelete = async () => {
+    if (!deletingCharge) return
     try {
-      await charges.remove(charge.id)
+      await charges.remove(deletingCharge.id)
       toast.show('Local charge deleted', 'success')
+      setDeletingCharge(null)
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to delete local charge', 'destructive')
     }
@@ -247,7 +249,7 @@ export function LocalChargeManagementPage() {
                   >
                     Edit
                   </Button>
-                  <Button variant="outline-destructive" onClick={() => handleDelete(c)}>
+                  <Button variant="outline-destructive" onClick={() => setDeletingCharge(c)}>
                     Delete
                   </Button>
                 </div>
@@ -266,6 +268,22 @@ export function LocalChargeManagementPage() {
       )}
 
       <LocalChargeFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSubmit={handleSave} ports={ports} currencies={currencies} editing={editing} />
+
+      <ConfirmDialog
+        open={Boolean(deletingCharge)}
+        onClose={() => setDeletingCharge(null)}
+        onConfirm={handleDelete}
+        title="Delete local charge"
+        description={
+          deletingCharge ? (
+            <p>
+              Are you sure you want to delete the <strong>{deletingCharge.chargeType}</strong> charge at{' '}
+              <strong>{portName(deletingCharge.portId)}</strong>?
+            </p>
+          ) : undefined
+        }
+        confirmLabel="Delete"
+      />
     </div>
   )
 }

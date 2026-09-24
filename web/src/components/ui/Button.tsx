@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'outline-destructive' | 'success'
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'outline-destructive' | 'destructive' | 'success'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
@@ -11,6 +11,7 @@ const variantClass: Record<ButtonVariant, string> = {
   secondary: 'btn-secondary',
   outline: 'btn-outline',
   'outline-destructive': 'btn-outline-destructive',
+  destructive: 'btn-destructive',
   success: 'btn-success',
 }
 

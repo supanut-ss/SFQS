@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Badge, Button, Dialog, EmptyState, Input, Select, SegmentedControl, Skeleton, Table, useToast } from '../../components/ui'
+import { Badge, Button, ConfirmDialog, Dialog, EmptyState, Input, Select, SegmentedControl, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError } from '../../lib/api'
 import { useRouter } from '../../lib/useRouter'
 import type { Carrier, Currency, ExchangeRate, OpsUser, Port, UserRole } from './types'
@@ -49,6 +49,8 @@ function PortsTab() {
 
   const [form, setForm] = useState({ code: '', name: '', city: '', country: '', type: 'sea' as Port['type'] })
 
+  const [deletingPort, setDeletingPort] = useState<Port | null>(null)
+
   const openNew = () => {
     setEditing(null)
     setForm({ code: '', name: '', city: '', country: '', type: 'sea' })
@@ -72,11 +74,12 @@ function PortsTab() {
     }
   }
 
-  const remove = async (port: Port) => {
-    if (!confirm(`Delete port ${port.name}?`)) return
+  const remove = async () => {
+    if (!deletingPort) return
     try {
-      await ports.remove(port.id)
+      await ports.remove(deletingPort.id)
       toast.show('Port deleted', 'success')
+      setDeletingPort(null)
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to delete port', 'destructive')
     }
@@ -137,7 +140,7 @@ function PortsTab() {
               render: (p: Port) => (
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => openEdit(p)}>Edit</Button>
-                  <Button variant="outline-destructive" onClick={() => remove(p)}>Delete</Button>
+                  <Button variant="outline-destructive" onClick={() => setDeletingPort(p)}>Delete</Button>
                 </div>
               ),
             },
@@ -172,6 +175,21 @@ function PortsTab() {
           </div>
         </div>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(deletingPort)}
+        onClose={() => setDeletingPort(null)}
+        onConfirm={remove}
+        title="Delete port"
+        description={
+          deletingPort ? (
+            <p>
+              Are you sure you want to delete port <strong>{deletingPort.name} ({deletingPort.code})</strong>?
+            </p>
+          ) : undefined
+        }
+        confirmLabel="Delete"
+      />
     </div>
   )
 }
@@ -180,6 +198,7 @@ function CarriersTab() {
   const carriers = useCrud<Carrier>('/api/master/carriers', false)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Carrier | null>(null)
+  const [deletingCarrier, setDeletingCarrier] = useState<Carrier | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'shippingLine' | 'airline'>('all')
   const [form, setForm] = useState({ code: '', name: '', type: 'shippingLine' as Carrier['type'] })
@@ -205,11 +224,12 @@ function CarriersTab() {
       toast.show(err instanceof ApiError ? err.message : 'Failed to save carrier', 'destructive')
     }
   }
-  const remove = async (carrier: Carrier) => {
-    if (!confirm(`Delete carrier ${carrier.name}?`)) return
+  const remove = async () => {
+    if (!deletingCarrier) return
     try {
-      await carriers.remove(carrier.id)
+      await carriers.remove(deletingCarrier.id)
       toast.show('Carrier deleted', 'success')
+      setDeletingCarrier(null)
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to delete carrier', 'destructive')
     }
@@ -264,7 +284,7 @@ function CarriersTab() {
               render: (c: Carrier) => (
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => openEdit(c)}>Edit</Button>
-                  <Button variant="outline-destructive" onClick={() => remove(c)}>Delete</Button>
+                  <Button variant="outline-destructive" onClick={() => setDeletingCarrier(c)}>Delete</Button>
                 </div>
               ),
             },
@@ -295,6 +315,21 @@ function CarriersTab() {
           </div>
         </div>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(deletingCarrier)}
+        onClose={() => setDeletingCarrier(null)}
+        onConfirm={remove}
+        title="Delete carrier"
+        description={
+          deletingCarrier ? (
+            <p>
+              Are you sure you want to delete carrier <strong>{deletingCarrier.name} ({deletingCarrier.code})</strong>?
+            </p>
+          ) : undefined
+        }
+        confirmLabel="Delete"
+      />
     </div>
   )
 }
@@ -430,6 +465,7 @@ function UsersTab() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [deactivatingUser, setDeactivatingUser] = useState<OpsUser | null>(null)
   const [form, setForm] = useState({ email: '', password: '', role: 'Sale' as UserRole, isActive: true })
   const toast = useToast()
 
@@ -458,11 +494,12 @@ function UsersTab() {
     }
   }
 
-  const deactivate = async (user: OpsUser) => {
-    if (!confirm(`Deactivate ${user.email}?`)) return
+  const deactivate = async () => {
+    if (!deactivatingUser) return
     try {
-      await users.remove(user.id)
+      await users.remove(deactivatingUser.id)
       toast.show('User deactivated', 'success')
+      setDeactivatingUser(null)
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to deactivate user', 'destructive')
     }
@@ -532,7 +569,7 @@ function UsersTab() {
               render: (u: OpsUser) => (
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => openEdit(u)}>Edit</Button>
-                  {u.isActive && <Button variant="outline-destructive" onClick={() => deactivate(u)}>Deactivate</Button>}
+                  {u.isActive && <Button variant="outline-destructive" onClick={() => setDeactivatingUser(u)}>Deactivate</Button>}
                 </div>
               ),
             },
@@ -576,6 +613,21 @@ function UsersTab() {
           </div>
         </div>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(deactivatingUser)}
+        onClose={() => setDeactivatingUser(null)}
+        onConfirm={deactivate}
+        title="Deactivate user"
+        description={
+          deactivatingUser ? (
+            <p>
+              Are you sure you want to deactivate user <strong>{deactivatingUser.email}</strong>? They will no longer be able to log in.
+            </p>
+          ) : undefined
+        }
+        confirmLabel="Deactivate"
+      />
     </div>
   )
 }

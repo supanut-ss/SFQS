@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Badge, Button, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
+import { Badge, Button, ConfirmDialog, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { RateFormDialog, type RateFormValues } from './RateFormDialog'
 import type { Carrier, Currency, CsvImportResult, FreightRate, Port } from './types'
@@ -34,6 +34,7 @@ export function RateManagementPage() {
   const [currencies, setCurrencies] = useState<Currency[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<FreightRate | null>(null)
+  const [deactivatingRate, setDeactivatingRate] = useState<FreightRate | null>(null)
   const [search, setSearch] = useState('')
   const [modeFilter, setModeFilter] = useState<'all' | 'fcl' | 'lcl' | 'air'>('all')
   const [directionFilter, setDirectionFilter] = useState<'all' | 'export' | 'import'>('all')
@@ -71,11 +72,12 @@ export function RateManagementPage() {
     }
   }
 
-  const handleDeactivate = async (rate: FreightRate) => {
-    if (!confirm(`Deactivate the ${rate.mode.toUpperCase()} rate ${portName(rate.originPortId)} → ${portName(rate.destinationPortId)}?`)) return
+  const handleDeactivate = async () => {
+    if (!deactivatingRate) return
     try {
-      await rates.remove(rate.id)
+      await rates.remove(deactivatingRate.id)
       toast.show('Rate deactivated', 'success')
+      setDeactivatingRate(null)
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to deactivate rate', 'destructive')
     }
@@ -275,7 +277,7 @@ export function RateManagementPage() {
                     Revise
                   </Button>
                   {r.isActive && (
-                    <Button variant="outline-destructive" onClick={() => handleDeactivate(r)}>
+                    <Button variant="outline-destructive" onClick={() => setDeactivatingRate(r)}>
                       Deactivate
                     </Button>
                   )}
@@ -302,6 +304,25 @@ export function RateManagementPage() {
         carriers={carriers}
         currencies={currencies}
         editing={editing}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deactivatingRate)}
+        onClose={() => setDeactivatingRate(null)}
+        onConfirm={handleDeactivate}
+        title="Deactivate freight rate"
+        description={
+          deactivatingRate ? (
+            <p>
+              Are you sure you want to deactivate the{' '}
+              <strong>{deactivatingRate.mode.toUpperCase()}</strong> rate from{' '}
+              <strong>{portName(deactivatingRate.originPortId)}</strong> to{' '}
+              <strong>{portName(deactivatingRate.destinationPortId)}</strong>?
+              Past quotations referencing this rate will remain intact.
+            </p>
+          ) : undefined
+        }
+        confirmLabel="Deactivate"
       />
     </div>
   )
