@@ -15,3 +15,8 @@ web/src/styles/tokens.css
 # local dev secrets / IDE
 *.user
 .vs/
+
+# Local deployment credentials and generated artifacts
+/deploy-single-host.ps1
+/deploy/
+/.deploy-cache/

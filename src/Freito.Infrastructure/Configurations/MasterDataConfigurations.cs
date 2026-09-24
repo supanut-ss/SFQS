@@ -18,6 +18,7 @@ internal sealed class PortConfiguration : IEntityTypeConfiguration<Port>
         builder.Property(x => x.Type).HasConversion<string>().HasMaxLength(8).IsRequired();
         builder.HasIndex(x => x.Code).IsUnique();
         builder.HasIndex(x => new { x.Type, x.Country, x.City });
+        builder.HasData(SampleMasterData.Ports);
     }
 }
 
@@ -31,6 +32,7 @@ internal sealed class CarrierConfiguration : IEntityTypeConfiguration<Carrier>
         builder.Property(x => x.Name).HasMaxLength(160).IsRequired();
         builder.Property(x => x.Type).HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.HasIndex(x => x.Code).IsUnique();
+        builder.HasData(SampleMasterData.Carriers);
     }
 }
 
@@ -107,7 +109,42 @@ internal sealed class CargoTypeConfiguration : IEntityTypeConfiguration<CargoTyp
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
         builder.HasIndex(x => x.Name).IsUnique();
+        builder.HasData(SampleMasterData.CargoTypes);
     }
+}
+
+internal static class SampleMasterData
+{
+    // Starter records keep public quote forms usable; freight and local-charge prices stay empty.
+    public static readonly Port[] Ports =
+    [
+        new() { Id = 1, Code = "THLCH", Name = "Laem Chabang Port", City = "Laem Chabang", Country = "Thailand", Type = PortType.Sea },
+        new() { Id = 2, Code = "THBKK", Name = "Bangkok Port", City = "Bangkok", Country = "Thailand", Type = PortType.Sea },
+        new() { Id = 3, Code = "CNSHA", Name = "Port of Shanghai", City = "Shanghai", Country = "China", Type = PortType.Sea },
+        new() { Id = 4, Code = "CNSZX", Name = "Port of Shenzhen", City = "Shenzhen", Country = "China", Type = PortType.Sea },
+        new() { Id = 5, Code = "SGSIN", Name = "Port of Singapore", City = "Singapore", Country = "Singapore", Type = PortType.Sea },
+        new() { Id = 6, Code = "BKK", Name = "Suvarnabhumi Airport", City = "Bangkok", Country = "Thailand", Type = PortType.Air },
+        new() { Id = 7, Code = "PVG", Name = "Shanghai Pudong International Airport", City = "Shanghai", Country = "China", Type = PortType.Air },
+        new() { Id = 8, Code = "HKG", Name = "Hong Kong International Airport", City = "Hong Kong", Country = "Hong Kong", Type = PortType.Air },
+    ];
+
+    public static readonly Carrier[] Carriers =
+    [
+        new() { Id = 1, Code = "MAERSK", Name = "Maersk", Type = CarrierType.ShippingLine },
+        new() { Id = 2, Code = "COSCO", Name = "COSCO Shipping Lines", Type = CarrierType.ShippingLine },
+        new() { Id = 3, Code = "CMA CGM", Name = "CMA CGM", Type = CarrierType.ShippingLine },
+        new() { Id = 4, Code = "TG", Name = "Thai Airways", Type = CarrierType.Airline },
+        new() { Id = 5, Code = "SQ", Name = "Singapore Airlines", Type = CarrierType.Airline },
+        new() { Id = 6, Code = "CX", Name = "Cathay Pacific Airways", Type = CarrierType.Airline },
+    ];
+
+    public static readonly CargoType[] CargoTypes =
+    [
+        new() { Id = 1, Name = "General Cargo", IsDangerous = false, IsProhibited = false },
+        new() { Id = 2, Name = "Perishable Goods", IsDangerous = false, IsProhibited = false },
+        new() { Id = 3, Name = "Dangerous Goods", IsDangerous = true, IsProhibited = false },
+        new() { Id = 4, Name = "Prohibited Goods", IsDangerous = false, IsProhibited = true },
+    ];
 }
 
 internal static class IncotermSeeds
