@@ -99,6 +99,21 @@ public sealed record RefreshRateLineDelta(
     decimal CurrentAmount,
     decimal Delta);
 
+public sealed class ApproveQuoteRequest
+{
+    [Range(typeof(decimal), "0", "99999999999999.9999")]
+    public decimal? FinalPrice { get; init; } // omit to keep the computed Subtotal as-is
+
+    [StringLength(1000)]
+    public string? Note { get; init; }
+}
+
+public sealed class RejectQuoteRequest
+{
+    [Required, StringLength(1000, MinimumLength = 1)]
+    public string Note { get; init; } = string.Empty;
+}
+
 public sealed record RefreshRateResponse(
     decimal PreviousFreightCost,
     decimal CurrentFreightCost,

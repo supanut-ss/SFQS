@@ -73,7 +73,7 @@ public class QuotationServiceTests
     public async Task ComputeAsync_UsesFreightRateCurrencyAsQuoteCurrency_AndConvertsLocalCharges()
     {
         var db = CreateSeededContext();
-        var service = new QuotationService(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
 
         var result = await service.ComputeAsync(FclRequest(), CancellationToken.None);
 
@@ -91,7 +91,7 @@ public class QuotationServiceTests
     public async Task ComputeAsync_NoRateFound_FallsBackToUsdAndStillPricesLocalCharges()
     {
         var db = CreateSeededContext();
-        var service = new QuotationService(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
         var request = FclRequest() with { ReadyDate = new DateTime(2050, 1, 1) }; // outside the seeded rate's validity window
 
         var result = await service.ComputeAsync(request, CancellationToken.None);
@@ -107,7 +107,7 @@ public class QuotationServiceTests
     public async Task SubmitAsync_PersistsDraftThenAdvancesToPendingSaleApproval()
     {
         var db = CreateSeededContext();
-        var service = new QuotationService(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
         var request = new QuoteSubmitRequest
         {
             Mode = TransportMode.Fcl,
@@ -146,7 +146,7 @@ public class QuotationServiceTests
     public async Task SubmitAsync_GeneratesUniqueSequentialQuoteNumbersPerDay()
     {
         var db = CreateSeededContext();
-        var service = new QuotationService(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
         var request = new QuoteSubmitRequest
         {
             Mode = TransportMode.Fcl,
@@ -173,7 +173,7 @@ public class QuotationServiceTests
     public async Task RefreshRateAsync_ReturnsZeroDelta_WhenNothingChangedSinceSubmission()
     {
         var db = CreateSeededContext();
-        var service = new QuotationService(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
         var request = new QuoteSubmitRequest
         {
             Mode = TransportMode.Fcl,
@@ -204,10 +204,107 @@ public class QuotationServiceTests
     public async Task RefreshRateAsync_ReturnsNull_ForUnknownQuotation()
     {
         var db = CreateSeededContext();
-        var service = new QuotationService(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
 
         var delta = await service.RefreshRateAsync(999, CancellationToken.None);
 
         Assert.Null(delta);
+    }
+
+    private static async Task<Quotation> SubmitQuotationAsync(FreitoDbContext db)
+    {
+        var service = new QuotationService(db, new AuditLogWriter(db));
+        var request = new QuoteSubmitRequest
+        {
+            Mode = TransportMode.Fcl,
+            Direction = ShipmentDirection.Export,
+            OriginPortId = 1,
+            DestinationPortId = 2,
+            IncotermCode = "CIF",
+            ReadyDate = new DateTime(2026, 1, 1),
+            ContainerSize = "40",
+            ContainerQty = 1,
+            CustomerName = "Somchai Exports",
+            CustomerEmail = "somchai@example.com",
+            CustomerPhone = "0812345678",
+            CargoTypeId = 1,
+        };
+        var (quotation, _) = await service.SubmitAsync(request, CancellationToken.None);
+        return quotation;
+    }
+
+    [Fact]
+    public async Task ApproveAsync_FromPendingSaleApproval_Succeeds()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+
+        var result = await service.ApproveAsync(quotation.Id, actorId: 42, finalPrice: 210m, note: "Discount applied", CancellationToken.None);
+
+        Assert.Equal(QuotationActionOutcome.Success, result.Outcome);
+        Assert.Equal(QuotationStatus.ApprovedAndSent, result.Quotation!.Status);
+        Assert.Equal(210m, result.Quotation.FinalPrice);
+        Assert.Equal(42, result.Quotation.ApprovedByUserId);
+        Assert.NotNull(result.Quotation.ApprovedAt);
+        Assert.NotNull(result.Quotation.SentAt);
+
+        var history = await db.QuotationStatusHistory.Where(h => h.QuotationId == quotation.Id).OrderBy(h => h.Id).ToListAsync();
+        Assert.Equal(QuotationStatus.ApprovedAndSent, history.Last().ToStatus);
+        Assert.Equal(42, history.Last().ActorUserId);
+
+        var auditEntry = await db.AuditLogs.SingleAsync(a => a.Entity == "Quotation" && a.EntityId == quotation.Id);
+        Assert.Equal(42, auditEntry.ChangedByUserId);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_AlreadyApproved_IsRejectedByTheGate()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+        await service.ApproveAsync(quotation.Id, actorId: 1, finalPrice: null, note: null, CancellationToken.None);
+
+        var result = await service.ApproveAsync(quotation.Id, actorId: 1, finalPrice: null, note: null, CancellationToken.None);
+
+        Assert.Equal(QuotationActionOutcome.InvalidTransition, result.Outcome);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_UnknownQuotation_ReturnsNotFound()
+    {
+        var db = CreateSeededContext();
+        var service = new QuotationService(db, new AuditLogWriter(db));
+
+        var result = await service.ApproveAsync(999, actorId: 1, finalPrice: null, note: null, CancellationToken.None);
+
+        Assert.Equal(QuotationActionOutcome.NotFound, result.Outcome);
+    }
+
+    [Fact]
+    public async Task RejectAsync_FromPendingSaleApproval_Succeeds()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+
+        var result = await service.RejectAsync(quotation.Id, actorId: 42, note: "Price too high", CancellationToken.None);
+
+        Assert.Equal(QuotationActionOutcome.Success, result.Outcome);
+        Assert.Equal(QuotationStatus.Rejected, result.Quotation!.Status);
+        Assert.Null(result.Quotation.ApprovedByUserId);
+    }
+
+    [Fact]
+    public async Task RejectAsync_AfterAlreadyRejected_IsRejectedByTheGate()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+        await service.RejectAsync(quotation.Id, actorId: 1, note: "First rejection", CancellationToken.None);
+
+        var result = await service.RejectAsync(quotation.Id, actorId: 1, note: "Second attempt", CancellationToken.None);
+
+        Assert.Equal(QuotationActionOutcome.InvalidTransition, result.Outcome);
     }
 }

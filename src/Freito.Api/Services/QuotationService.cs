@@ -3,10 +3,20 @@ using Freito.Api.Models;
 using Freito.Domain.Entities;
 using Freito.Domain.Enums;
 using Freito.Domain.Quoting;
+using Freito.Domain.Workflow;
 using Freito.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace Freito.Api.Services;
+
+public enum QuotationActionOutcome
+{
+    Success,
+    NotFound,
+    InvalidTransition,
+}
+
+public sealed record QuotationActionResult(QuotationActionOutcome Outcome, Quotation? Quotation = null, string? Error = null);
 
 /// <summary>
 /// Bridges the pure QuoteCalculator (T5) with real data and the Quotation aggregate (T7):
@@ -15,7 +25,7 @@ namespace Freito.Api.Services;
 /// shows a single coherent total — QuoteCalculator itself doesn't do this conversion, it only
 /// sums each side in its own currency. See technical-plan.md §3/§4.
 /// </summary>
-public sealed class QuotationService(FreitoDbContext db)
+public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
 {
     private const string BaseCurrency = "USD"; // confirmed with Operation, technical-plan.md §7
 
@@ -247,6 +257,66 @@ public sealed class QuotationService(FreitoDbContext db)
             Currency: current.QuoteCurrency,
             CurrentRateFound: current.RateFound,
             LocalChargeDeltas: localDeltas);
+    }
+
+    /// <summary>The mandatory approval gate (AC3, technical-plan.md §3): only legal from
+    /// PendingSaleApproval, enforced via QuotationWorkflow so this can't silently drift from
+    /// RejectAsync's check. Caller (QuotesController) has already verified the actor is Sale.</summary>
+    public async Task<QuotationActionResult> ApproveAsync(
+        int quotationId, int actorId, decimal? finalPrice, string? note, CancellationToken cancellationToken)
+    {
+        var quotation = await db.Quotations.FirstOrDefaultAsync(q => q.Id == quotationId, cancellationToken);
+        if (quotation is null) return new QuotationActionResult(QuotationActionOutcome.NotFound);
+        if (!QuotationWorkflow.CanApprove(quotation.Status))
+            return new QuotationActionResult(QuotationActionOutcome.InvalidTransition, Error: $"Cannot approve a quotation in status {quotation.Status}.");
+
+        var before = AuditLogWriter.Snapshot(quotation);
+        var fromStatus = quotation.Status;
+        var now = DateTime.UtcNow;
+        quotation.FinalPrice = finalPrice ?? quotation.Subtotal;
+        quotation.Status = QuotationStatus.ApprovedAndSent;
+        quotation.ApprovedByUserId = actorId;
+        quotation.ApprovedAt = now;
+        quotation.SentAt = now;
+
+        db.QuotationStatusHistory.Add(new QuotationStatusHistory
+        {
+            QuotationId = quotation.Id,
+            FromStatus = fromStatus,
+            ToStatus = quotation.Status,
+            ActorUserId = actorId,
+            At = now,
+            Note = note,
+        });
+
+        await audit.SaveAsync(actorId, [PendingAuditChange.Updated("Quotation", quotation.Id, before, quotation)], cancellationToken);
+        return new QuotationActionResult(QuotationActionOutcome.Success, quotation);
+    }
+
+    public async Task<QuotationActionResult> RejectAsync(int quotationId, int actorId, string note, CancellationToken cancellationToken)
+    {
+        var quotation = await db.Quotations.FirstOrDefaultAsync(q => q.Id == quotationId, cancellationToken);
+        if (quotation is null) return new QuotationActionResult(QuotationActionOutcome.NotFound);
+        if (!QuotationWorkflow.CanReject(quotation.Status))
+            return new QuotationActionResult(QuotationActionOutcome.InvalidTransition, Error: $"Cannot reject a quotation in status {quotation.Status}.");
+
+        var before = AuditLogWriter.Snapshot(quotation);
+        var fromStatus = quotation.Status;
+        var now = DateTime.UtcNow;
+        quotation.Status = QuotationStatus.Rejected;
+
+        db.QuotationStatusHistory.Add(new QuotationStatusHistory
+        {
+            QuotationId = quotation.Id,
+            FromStatus = fromStatus,
+            ToStatus = quotation.Status,
+            ActorUserId = actorId,
+            At = now,
+            Note = note,
+        });
+
+        await audit.SaveAsync(actorId, [PendingAuditChange.Updated("Quotation", quotation.Id, before, quotation)], cancellationToken);
+        return new QuotationActionResult(QuotationActionOutcome.Success, quotation);
     }
 
     private static IEnumerable<QuotationLine> BuildLines(int quotationId, QuoteCalculationResponse computation)

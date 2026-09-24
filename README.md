@@ -36,6 +36,20 @@ dotnet run
 dotnet build && dotnet test   # from src/Freito.Tests or any project folder
 ```
 
+### First login
+
+A bootstrap Admin account is seeded by migration so the system isn't a chicken-and-egg problem
+(no self-signup — Admin creates every other account via `POST /api/master/users`):
+
+```
+email:    admin@freito.local
+password: ChangeMe123!
+```
+
+**Change this password immediately** via `PUT /api/master/users/1` after first login — it's a
+well-known value checked into this repo. `Jwt:Key` in `appsettings.Development.json` is a dev-only
+value too; the production deployment must set its own `Jwt:Key` (and never reuse this one).
+
 ## Checks
 
 ```bash

@@ -84,4 +84,37 @@ public sealed class QuotesController(FreitoDbContext db, QuotationService quotes
         var delta = await quotes.RefreshRateAsync(id, cancellationToken);
         return delta is null ? NotFound() : Ok(delta);
     }
+
+    /// <summary>Sale only — not Admin — per the approval gate design in technical-plan.md §3
+    /// ("ผู้กดมี role Sale เท่านั้น"). Listing/detail are open to Admin for visibility; approving
+    /// is not.</summary>
+    [HttpPost("{id:int}/approve")]
+    public async Task<IActionResult> Approve(int id, ApproveQuoteRequest request, CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out var actorId, UserRole.Sale);
+        if (rejection is not null) return rejection;
+
+        var result = await quotes.ApproveAsync(id, actorId, request.FinalPrice, request.Note, cancellationToken);
+        return result.Outcome switch
+        {
+            QuotationActionOutcome.NotFound => NotFound(),
+            QuotationActionOutcome.InvalidTransition => Conflict(result.Error),
+            _ => Ok(result.Quotation),
+        };
+    }
+
+    [HttpPost("{id:int}/reject")]
+    public async Task<IActionResult> Reject(int id, RejectQuoteRequest request, CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out var actorId, UserRole.Sale);
+        if (rejection is not null) return rejection;
+
+        var result = await quotes.RejectAsync(id, actorId, request.Note, cancellationToken);
+        return result.Outcome switch
+        {
+            QuotationActionOutcome.NotFound => NotFound(),
+            QuotationActionOutcome.InvalidTransition => Conflict(result.Error),
+            _ => Ok(result.Quotation),
+        };
+    }
 }

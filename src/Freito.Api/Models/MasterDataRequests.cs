@@ -56,6 +56,30 @@ public sealed class ExchangeRateRequest
     public DateTime EffectiveDate { get; init; }
 }
 
+public sealed class UserRequest
+{
+    [Required, EmailAddress, StringLength(254)]
+    public string Email { get; init; } = string.Empty;
+
+    [Required, StringLength(200, MinimumLength = 8)]
+    public string Password { get; init; } = string.Empty;
+
+    [Required, EnumDataType(typeof(UserRole))]
+    public UserRole? Role { get; init; }
+}
+
+public sealed class UserUpdateRequest
+{
+    [Required, EnumDataType(typeof(UserRole))]
+    public UserRole? Role { get; init; }
+
+    public bool IsActive { get; init; } = true;
+
+    /// <summary>Optional — omit to leave the current password unchanged.</summary>
+    [StringLength(200, MinimumLength = 8)]
+    public string? Password { get; init; }
+}
+
 public sealed class CargoTypeRequest
 {
     [Required, StringLength(100, MinimumLength = 1)]

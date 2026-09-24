@@ -324,6 +324,78 @@ public sealed class MasterDataController(FreitoDbContext db) : ProtectedControll
         return NoContent();
     }
 
+    [HttpGet("users")]
+    public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out _, UserRole.Admin);
+        if (rejection is not null) return rejection;
+        var users = await db.Users.AsNoTracking().OrderBy(x => x.Email)
+            .Select(x => new { x.Id, x.Email, x.Role, x.IsActive, x.CreatedAt }).ToListAsync(cancellationToken);
+        return Ok(users);
+    }
+
+    [HttpGet("users/{id:int}")]
+    public async Task<IActionResult> GetUser(int id, CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out _, UserRole.Admin);
+        if (rejection is not null) return rejection;
+        var user = await db.Users.AsNoTracking().Where(x => x.Id == id)
+            .Select(x => new { x.Id, x.Email, x.Role, x.IsActive, x.CreatedAt }).FirstOrDefaultAsync(cancellationToken);
+        return user is null ? NotFound() : Ok(user);
+    }
+
+    [HttpPost("users")]
+    public async Task<IActionResult> CreateUser(UserRequest request, CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out _, UserRole.Admin);
+        if (rejection is not null) return rejection;
+        var email = request.Email.Trim().ToLowerInvariant();
+        if (await db.Users.AnyAsync(x => x.Email == email, cancellationToken)) return Conflict("A user with this email already exists.");
+
+        var user = new User
+        {
+            Email = email,
+            PasswordHash = Auth.PasswordHasher.Hash(request.Password),
+            Role = request.Role!.Value,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync(cancellationToken);
+        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, new { user.Id, user.Email, user.Role, user.IsActive, user.CreatedAt });
+    }
+
+    [HttpPut("users/{id:int}")]
+    public async Task<IActionResult> UpdateUser(int id, UserUpdateRequest request, CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out _, UserRole.Admin);
+        if (rejection is not null) return rejection;
+        var user = await db.Users.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (user is null) return NotFound();
+
+        user.Role = request.Role!.Value;
+        user.IsActive = request.IsActive;
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            user.PasswordHash = Auth.PasswordHasher.Hash(request.Password);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        return Ok(new { user.Id, user.Email, user.Role, user.IsActive, user.CreatedAt });
+    }
+
+    [HttpDelete("users/{id:int}")]
+    public async Task<IActionResult> DeactivateUser(int id, CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out _, UserRole.Admin);
+        if (rejection is not null) return rejection;
+        var user = await db.Users.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (user is null) return NotFound();
+        user.IsActive = false; // soft-deactivate — never hard delete, quotations reference CreatedByUserId/ApprovedByUserId
+        await db.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
     private static bool HasText(params string[] values) => values.All(value => !string.IsNullOrWhiteSpace(value));
 
     private static DateTime UtcDate(DateTime value) =>

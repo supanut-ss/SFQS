@@ -1,4 +1,5 @@
 using Freito.Domain.Entities;
+using Freito.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,6 +16,21 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.Role).HasConversion<string>().HasMaxLength(16).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.HasIndex(x => x.Email).IsUnique();
+
+        // Bootstrap Admin so the very first login is possible without direct DB access — there's
+        // no self-signup (User doc comment) and Admin is the only role that can create more users
+        // (MasterDataController). Password is "ChangeMe123!"; hash computed once with
+        // PasswordHasher.HashWithSalt for a reproducible migration, never used for a real user's
+        // password. MUST be changed immediately after first login — see README.md.
+        builder.HasData(new User
+        {
+            Id = 1,
+            Email = "admin@freito.local",
+            PasswordHash = "100000.RnJlaXRvQm9vdHN0cmFwU2FsdA==.ARqOilZbMKbjVo4Xi+DXpTkl2AQYWlJcX+e3XKjy7VA=",
+            Role = UserRole.Admin,
+            IsActive = true,
+            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+        });
     }
 }
 
