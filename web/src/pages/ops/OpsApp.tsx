@@ -1,19 +1,20 @@
 import { useState } from 'react'
 import { Badge, Button, Skeleton } from '../../components/ui'
 import { useAuth } from '../../lib/useAuth'
+import { QuotationsPage } from '../sale/QuotationsPage'
 import { LoginPage } from './LoginPage'
 import { RateManagementPage } from './RateManagementPage'
 import { LocalChargeManagementPage } from './LocalChargeManagementPage'
 import { MasterDataPage } from './MasterDataPage'
 
-type OpsTab = 'rates' | 'local-charges' | 'master-data'
+type OpsTab = 'quotations' | 'rates' | 'local-charges' | 'master-data'
 
-/** Internal (Sale/Operation/Admin) area — ui-plan.md IA pages 5-8. No router yet, so this is
+/** Internal (Sale/Operation/Admin) area — ui-plan.md IA pages 3-8. No router yet, so this is
  * its own small tab switcher gated by the logged-in user's role, same pattern as
  * InstantQuotePage's linear flow (T13). */
 export function OpsApp() {
   const { user, loading, logout } = useAuth()
-  const [tab, setTab] = useState<OpsTab>('rates')
+  const [tab, setTab] = useState<OpsTab>('quotations')
 
   if (loading) {
     return (
@@ -28,8 +29,19 @@ export function OpsApp() {
     return <LoginPage />
   }
 
+  const canSeeSale = user.role === 'Sale' || user.role === 'Admin'
   const canSeeOperation = user.role === 'Operation' || user.role === 'Admin'
   const canSeeAdmin = user.role === 'Admin'
+
+  // A plain Operation account has no access to "quotations" (the default tab), which only
+  // matters the first time they land here — fall back to the first tab their role can see.
+  const availableTabs = ([
+    canSeeSale && 'quotations',
+    canSeeOperation && 'rates',
+    canSeeOperation && 'local-charges',
+    canSeeAdmin && 'master-data',
+  ] as const).filter((t): t is OpsTab => t !== false)
+  const activeTab = availableTabs.includes(tab) ? tab : availableTabs[0]
 
   return (
     <div className="flex flex-col gap-4 w-full items-center">
@@ -43,25 +55,21 @@ export function OpsApp() {
         </Button>
       </div>
 
-      {(canSeeOperation || canSeeAdmin) && (
-        <nav className="w-full max-w-4xl flex gap-2 border-b border-border pb-2">
-          {canSeeOperation && (
-            <>
-              <TabLink active={tab === 'rates'} onClick={() => setTab('rates')} label="Rates" />
-              <TabLink active={tab === 'local-charges'} onClick={() => setTab('local-charges')} label="Local charges" />
-            </>
-          )}
-          {canSeeAdmin && <TabLink active={tab === 'master-data'} onClick={() => setTab('master-data')} label="Master data" />}
-        </nav>
-      )}
+      <nav className="w-full max-w-4xl flex gap-2 border-b border-border pb-2">
+        {canSeeSale && <TabLink active={activeTab === 'quotations'} onClick={() => setTab('quotations')} label="Quotations" />}
+        {canSeeOperation && (
+          <>
+            <TabLink active={activeTab === 'rates'} onClick={() => setTab('rates')} label="Rates" />
+            <TabLink active={activeTab === 'local-charges'} onClick={() => setTab('local-charges')} label="Local charges" />
+          </>
+        )}
+        {canSeeAdmin && <TabLink active={activeTab === 'master-data'} onClick={() => setTab('master-data')} label="Master data" />}
+      </nav>
 
-      {!canSeeOperation && !canSeeAdmin && (
-        <p className="text-sm text-muted-foreground">This area is for Operation and Admin accounts. Sale's inbox is coming in a later release.</p>
-      )}
-
-      {canSeeOperation && tab === 'rates' && <RateManagementPage />}
-      {canSeeOperation && tab === 'local-charges' && <LocalChargeManagementPage />}
-      {canSeeAdmin && tab === 'master-data' && <MasterDataPage />}
+      {activeTab === 'quotations' && canSeeSale && <QuotationsPage />}
+      {activeTab === 'rates' && canSeeOperation && <RateManagementPage />}
+      {activeTab === 'local-charges' && canSeeOperation && <LocalChargeManagementPage />}
+      {activeTab === 'master-data' && canSeeAdmin && <MasterDataPage />}
     </div>
   )
 }
