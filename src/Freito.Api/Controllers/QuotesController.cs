@@ -85,6 +85,26 @@ public sealed class QuotesController(FreitoDbContext db, QuotationService quotes
         return delta is null ? NotFound() : Ok(delta);
     }
 
+    /// <summary>Sale or Admin can edit quotation lines during review in Draft or PendingSaleApproval.</summary>
+    [HttpPut("{id:int}/lines")]
+    public async Task<IActionResult> UpdateLines(int id, UpdateQuoteLinesRequest request, CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out var actorId, UserRole.Sale, UserRole.Admin);
+        if (rejection is not null) return rejection;
+
+        var result = await quotes.UpdateLinesAsync(id, actorId, request.Lines, request.FinalPrice, request.Note, cancellationToken);
+        return result.Outcome switch
+        {
+            QuotationActionOutcome.NotFound => NotFound(),
+            QuotationActionOutcome.InvalidTransition => Conflict(result.Error),
+            _ => Ok(new
+            {
+                quotation = result.Quotation,
+                lines = await db.QuotationLines.AsNoTracking().Where(l => l.QuotationId == id).ToListAsync(cancellationToken),
+            }),
+        };
+    }
+
     /// <summary>Sale or Admin can approve/reject quotations per business permissions.
     /// Listing/detail/pdf are also open to both.</summary>
     [HttpPost("{id:int}/approve")]
@@ -93,7 +113,7 @@ public sealed class QuotesController(FreitoDbContext db, QuotationService quotes
         var rejection = RequireActor(out var actorId, UserRole.Sale, UserRole.Admin);
         if (rejection is not null) return rejection;
 
-        var result = await quotes.ApproveAsync(id, actorId, request.FinalPrice, request.Note, cancellationToken);
+        var result = await quotes.ApproveAsync(id, actorId, request.FinalPrice, request.Note, cancellationToken, request.Lines);
         return result.Outcome switch
         {
             QuotationActionOutcome.NotFound => NotFound(),

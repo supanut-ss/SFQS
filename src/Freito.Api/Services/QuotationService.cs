@@ -259,12 +259,90 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
             LocalChargeDeltas: localDeltas);
     }
 
+    public async Task<QuotationActionResult> UpdateLinesAsync(
+        int quotationId,
+        int actorId,
+        IReadOnlyList<QuoteLineItemDto> lines,
+        decimal? finalPrice,
+        string? note,
+        CancellationToken cancellationToken)
+    {
+        var quotation = await db.Quotations.FirstOrDefaultAsync(q => q.Id == quotationId, cancellationToken);
+        if (quotation is null) return new QuotationActionResult(QuotationActionOutcome.NotFound);
+        if (quotation.Status is not (QuotationStatus.PendingSaleApproval or QuotationStatus.Draft))
+            return new QuotationActionResult(QuotationActionOutcome.InvalidTransition, Error: $"Cannot modify lines for a quotation in status {quotation.Status}.");
+
+        var existingLines = await db.QuotationLines.Where(l => l.QuotationId == quotationId).ToListAsync(cancellationToken);
+        var before = AuditLogWriter.Snapshot(quotation);
+
+        db.QuotationLines.RemoveRange(existingLines);
+
+        var newLines = lines.Select(l => new QuotationLine
+        {
+            QuotationId = quotation.Id,
+            Description = string.IsNullOrWhiteSpace(l.Description) ? "Charge" : l.Description.Trim(),
+            Basis = string.IsNullOrWhiteSpace(l.Basis) ? "Per shipment" : l.Basis.Trim(),
+            UnitPrice = l.UnitPrice != 0 ? l.UnitPrice : l.Amount,
+            Qty = l.Qty > 0 ? l.Qty : 1,
+            Amount = l.Amount,
+            Currency = string.IsNullOrWhiteSpace(l.Currency) ? quotation.QuoteCurrency : l.Currency.Trim().ToUpperInvariant(),
+        }).ToList();
+
+        db.QuotationLines.AddRange(newLines);
+
+        var freightLines = newLines.Where(l => l.Description.Equals("Freight", StringComparison.OrdinalIgnoreCase)).ToList();
+        var localLines = newLines.Where(l => !l.Description.Equals("Freight", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        quotation.FreightCost = freightLines.Sum(l => l.Amount);
+        quotation.LocalChargeTotal = localLines.Sum(l => l.Amount);
+        quotation.Subtotal = newLines.Sum(l => l.Amount);
+
+        if (finalPrice.HasValue && finalPrice.Value >= 0)
+        {
+            quotation.FinalPrice = finalPrice.Value;
+            quotation.DiscountAmount = Math.Max(0, quotation.Subtotal - quotation.FinalPrice);
+        }
+        else
+        {
+            quotation.FinalPrice = quotation.Subtotal;
+            quotation.DiscountAmount = 0;
+        }
+
+        if (!string.IsNullOrWhiteSpace(note))
+        {
+            db.QuotationStatusHistory.Add(new QuotationStatusHistory
+            {
+                QuotationId = quotation.Id,
+                FromStatus = quotation.Status,
+                ToStatus = quotation.Status,
+                ActorUserId = actorId,
+                At = DateTime.UtcNow,
+                Note = $"Lines updated: {note}",
+            });
+        }
+
+        await audit.SaveAsync(actorId, [PendingAuditChange.Updated("Quotation", quotation.Id, before, quotation)], cancellationToken);
+        return new QuotationActionResult(QuotationActionOutcome.Success, quotation);
+    }
+
     /// <summary>The mandatory approval gate (AC3, technical-plan.md §3): only legal from
     /// PendingSaleApproval, enforced via QuotationWorkflow so this can't silently drift from
-    /// RejectAsync's check. Caller (QuotesController) has already verified the actor is Sale.</summary>
+    /// RejectAsync's check. Caller (QuotesController) has already verified the actor is Sale or Admin.</summary>
     public async Task<QuotationActionResult> ApproveAsync(
-        int quotationId, int actorId, decimal? finalPrice, string? note, CancellationToken cancellationToken)
+        int quotationId,
+        int actorId,
+        decimal? finalPrice,
+        string? note,
+        CancellationToken cancellationToken,
+        IReadOnlyList<QuoteLineItemDto>? lines = null)
     {
+        if (lines is { Count: > 0 })
+        {
+            var updateResult = await UpdateLinesAsync(quotationId, actorId, lines, finalPrice, null, cancellationToken);
+            if (updateResult.Outcome != QuotationActionOutcome.Success)
+                return updateResult;
+        }
+
         var quotation = await db.Quotations.FirstOrDefaultAsync(q => q.Id == quotationId, cancellationToken);
         if (quotation is null) return new QuotationActionResult(QuotationActionOutcome.NotFound);
         if (!QuotationWorkflow.CanApprove(quotation.Status))
@@ -273,7 +351,8 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
         var before = AuditLogWriter.Snapshot(quotation);
         var fromStatus = quotation.Status;
         var now = DateTime.UtcNow;
-        quotation.FinalPrice = finalPrice ?? quotation.Subtotal;
+        quotation.FinalPrice = finalPrice ?? quotation.FinalPrice;
+        quotation.DiscountAmount = Math.Max(0, quotation.Subtotal - quotation.FinalPrice);
         quotation.Status = QuotationStatus.ApprovedAndSent;
         quotation.ApprovedByUserId = actorId;
         quotation.ApprovedAt = now;

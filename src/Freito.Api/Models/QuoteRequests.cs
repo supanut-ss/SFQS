@@ -99,6 +99,29 @@ public sealed record RefreshRateLineDelta(
     decimal CurrentAmount,
     decimal Delta);
 
+public sealed class QuoteLineItemDto
+{
+    public int? Id { get; init; }
+    [Required, StringLength(200)]
+    public string Description { get; init; } = string.Empty;
+    [StringLength(100)]
+    public string Basis { get; init; } = string.Empty;
+    public decimal UnitPrice { get; init; }
+    public decimal Qty { get; init; } = 1;
+    [Range(0, 99999999999999.9999)]
+    public decimal Amount { get; init; }
+    [StringLength(3)]
+    public string Currency { get; init; } = string.Empty;
+}
+
+public sealed class UpdateQuoteLinesRequest
+{
+    public List<QuoteLineItemDto> Lines { get; init; } = [];
+    public decimal? FinalPrice { get; init; }
+    [StringLength(1000)]
+    public string? Note { get; init; }
+}
+
 public sealed class ApproveQuoteRequest
 {
     [Range(typeof(decimal), "0", "99999999999999.9999")]
@@ -106,6 +129,8 @@ public sealed class ApproveQuoteRequest
 
     [StringLength(1000)]
     public string? Note { get; init; }
+
+    public List<QuoteLineItemDto>? Lines { get; init; }
 }
 
 public sealed class RejectQuoteRequest

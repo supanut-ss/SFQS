@@ -323,4 +323,58 @@ public class QuotationServiceTests
 
         Assert.Equal(QuotationActionOutcome.InvalidTransition, result.Outcome);
     }
+
+    [Fact]
+    public async Task UpdateLinesAsync_ModifiesLinesAndRecalculatesTotals()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+
+        var customizedLines = new List<QuoteLineItemDto>
+        {
+            new() { Description = "Freight", Basis = "Flat", UnitPrice = 250m, Qty = 1, Amount = 250m, Currency = "USD" },
+            new() { Description = "THC (Destination)", Basis = "PerContainer", UnitPrice = 50m, Qty = 1, Amount = 50m, Currency = "USD" },
+            new() { Description = "Trucking / Pick up", Basis = "Per truck", UnitPrice = 120m, Qty = 1, Amount = 120m, Currency = "USD" },
+        };
+
+        var result = await service.UpdateLinesAsync(
+            quotation.Id, actorId: 42, customizedLines, finalPrice: 400m, note: "Custom discounted package", CancellationToken.None);
+
+        Assert.Equal(QuotationActionOutcome.Success, result.Outcome);
+        Assert.Equal(420m, result.Quotation!.Subtotal); // 250 + 50 + 120
+        Assert.Equal(400m, result.Quotation.FinalPrice);
+        Assert.Equal(20m, result.Quotation.DiscountAmount); // 420 - 400
+        Assert.Equal(250m, result.Quotation.FreightCost);
+        Assert.Equal(170m, result.Quotation.LocalChargeTotal); // 50 + 120
+
+        var lines = await db.QuotationLines.Where(l => l.QuotationId == quotation.Id).ToListAsync();
+        Assert.Equal(3, lines.Count);
+        Assert.Contains(lines, l => l.Description == "Trucking / Pick up" && l.Amount == 120m);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_WithCustomLines_UpdatesLinesAndApproves()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+
+        var customizedLines = new List<QuoteLineItemDto>
+        {
+            new() { Description = "Freight", Basis = "Flat", Amount = 180m, Currency = "USD" },
+            new() { Description = "Custom clearance", Basis = "Shipment", Amount = 70m, Currency = "USD" },
+        };
+
+        var result = await service.ApproveAsync(
+            quotation.Id, actorId: 42, finalPrice: 250m, note: "Approved with custom fee", CancellationToken.None, customizedLines);
+
+        Assert.Equal(QuotationActionOutcome.Success, result.Outcome);
+        Assert.Equal(QuotationStatus.ApprovedAndSent, result.Quotation!.Status);
+        Assert.Equal(250m, result.Quotation.Subtotal); // 180 + 70
+        Assert.Equal(250m, result.Quotation.FinalPrice);
+
+        var lines = await db.QuotationLines.Where(l => l.QuotationId == quotation.Id).ToListAsync();
+        Assert.Equal(2, lines.Count);
+    }
 }
