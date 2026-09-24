@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Badge, Button, EmptyState, Select, Skeleton, Table, useToast } from '../../components/ui'
+import { Badge, Button, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { RateFormDialog, type RateFormValues } from './RateFormDialog'
 import type { Carrier, Currency, CsvImportResult, FreightRate, Port } from './types'
@@ -34,7 +34,10 @@ export function RateManagementPage() {
   const [currencies, setCurrencies] = useState<Currency[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<FreightRate | null>(null)
-  const [activeOnly, setActiveOnly] = useState(true)
+  const [search, setSearch] = useState('')
+  const [modeFilter, setModeFilter] = useState<'all' | 'fcl' | 'lcl' | 'air'>('all')
+  const [directionFilter, setDirectionFilter] = useState<'all' | 'export' | 'import'>('all')
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active')
   const [importResult, setImportResult] = useState<CsvImportResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toast = useToast()
@@ -51,6 +54,8 @@ export function RateManagementPage() {
 
   const portName = (id: number) => ports.find((p) => p.id === id)?.code ?? String(id)
   const carrierName = (id: number) => carriers.find((c) => c.id === id)?.name ?? String(id)
+  const portLookup = (id: number) => ports.find((p) => p.id === id)
+  const carrierLookup = (id: number) => carriers.find((c) => c.id === id)
 
   const handleSave = async (values: RateFormValues) => {
     try {
@@ -96,22 +101,44 @@ export function RateManagementPage() {
     }
   }
 
-  const visibleRates = activeOnly ? rates.items.filter((r) => r.isActive) : rates.items
+  const visibleRates = rates.items.filter((r) => {
+    if (statusFilter === 'active' && !r.isActive) return false
+    if (statusFilter === 'inactive' && r.isActive) return false
+    if (modeFilter !== 'all' && r.mode !== modeFilter) return false
+    if (directionFilter !== 'all' && r.direction !== directionFilter) return false
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      const origin = portLookup(r.originPortId)
+      const dest = portLookup(r.destinationPortId)
+      const carrier = carrierLookup(r.carrierId)
+      const matches =
+        (origin?.code && origin.code.toLowerCase().includes(q)) ||
+        (origin?.name && origin.name.toLowerCase().includes(q)) ||
+        (origin?.city && origin.city.toLowerCase().includes(q)) ||
+        (dest?.code && dest.code.toLowerCase().includes(q)) ||
+        (dest?.name && dest.name.toLowerCase().includes(q)) ||
+        (dest?.city && dest.city.toLowerCase().includes(q)) ||
+        (carrier?.name && carrier.name.toLowerCase().includes(q)) ||
+        (carrier?.code && carrier.code.toLowerCase().includes(q)) ||
+        r.currencyCode.toLowerCase().includes(q) ||
+        (r.containerSize && r.containerSize.toLowerCase().includes(q)) ||
+        r.mode.toLowerCase().includes(q) ||
+        r.direction.toLowerCase().includes(q)
+
+      if (!matches) return false
+    }
+
+    return true
+  })
+
+  const hasFilterActive = Boolean(search || modeFilter !== 'all' || directionFilter !== 'all' || statusFilter !== 'active')
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-4xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-heading text-lg font-semibold">Rate management</h2>
         <div className="flex items-center gap-3">
-          <Select
-            label="Filter"
-            options={[
-              { value: 'active', label: 'Active only' },
-              { value: 'all', label: 'All' },
-            ]}
-            value={activeOnly ? 'active' : 'all'}
-            onChange={(e) => setActiveOnly(e.target.value === 'active')}
-          />
           <input
             ref={fileInputRef}
             type="file"
@@ -133,6 +160,67 @@ export function RateManagementPage() {
           >
             New rate
           </Button>
+        </div>
+      </div>
+
+      <div className="card-sample flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <Input
+            label="Search"
+            placeholder="Port, carrier, size..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Select
+            label="Mode"
+            options={[
+              { value: 'all', label: 'All modes' },
+              { value: 'fcl', label: 'FCL' },
+              { value: 'lcl', label: 'LCL' },
+              { value: 'air', label: 'Air' },
+            ]}
+            value={modeFilter}
+            onChange={(e) => setModeFilter(e.target.value as 'all' | 'fcl' | 'lcl' | 'air')}
+          />
+          <Select
+            label="Direction"
+            options={[
+              { value: 'all', label: 'All directions' },
+              { value: 'export', label: 'Export' },
+              { value: 'import', label: 'Import' },
+            ]}
+            value={directionFilter}
+            onChange={(e) => setDirectionFilter(e.target.value as 'all' | 'export' | 'import')}
+          />
+          <Select
+            label="Status"
+            options={[
+              { value: 'active', label: 'Active only' },
+              { value: 'inactive', label: 'Inactive only' },
+              { value: 'all', label: 'All' },
+            ]}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'active' | 'inactive' | 'all')}
+          />
+        </div>
+        <div className="flex justify-between items-center text-xs text-muted-foreground">
+          <span>
+            Showing {visibleRates.length} of {rates.items.length} rates
+          </span>
+          {hasFilterActive && (
+            <button
+              type="button"
+              className="text-xs text-primary underline"
+              onClick={() => {
+                setSearch('')
+                setModeFilter('all')
+                setDirectionFilter('all')
+                setStatusFilter('active')
+              }}
+            >
+              Reset filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -197,8 +285,12 @@ export function RateManagementPage() {
           ]}
           rows={visibleRates}
           rowKey={(r) => r.id}
-          emptyTitle="No rates yet"
-          emptyDescription="Add one manually or import a CSV file."
+          emptyTitle={hasFilterActive && rates.items.length > 0 ? 'No matching rates' : 'No rates yet'}
+          emptyDescription={
+            hasFilterActive && rates.items.length > 0
+              ? 'Try adjusting or resetting your search and filter criteria.'
+              : 'Add one manually or import a CSV file.'
+          }
         />
       )}
 

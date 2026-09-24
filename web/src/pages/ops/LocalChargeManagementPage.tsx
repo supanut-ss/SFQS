@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Badge, Button, EmptyState, Skeleton, Table, useToast } from '../../components/ui'
+import { Badge, Button, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { LocalChargeFormDialog, type LocalChargeFormValues } from './LocalChargeFormDialog'
 import type { CsvImportResult, Currency, LocalCharge, Port } from './types'
@@ -27,6 +27,10 @@ export function LocalChargeManagementPage() {
   const [currencies, setCurrencies] = useState<Currency[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<LocalCharge | null>(null)
+  const [search, setSearch] = useState('')
+  const [modeFilter, setModeFilter] = useState<'all' | 'fcl' | 'lcl' | 'air'>('all')
+  const [directionFilter, setDirectionFilter] = useState<'all' | 'export' | 'import'>('all')
+  const [sideFilter, setSideFilter] = useState<'all' | 'origin' | 'destination'>('all')
   const [importResult, setImportResult] = useState<CsvImportResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toast = useToast()
@@ -84,6 +88,33 @@ export function LocalChargeManagementPage() {
     }
   }
 
+  const visibleCharges = charges.items.filter((c) => {
+    if (modeFilter !== 'all' && c.mode !== modeFilter) return false
+    if (directionFilter !== 'all' && c.direction !== directionFilter) return false
+    if (sideFilter !== 'all' && c.chargeSide !== sideFilter) return false
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      const port = ports.find((p) => p.id === c.portId)
+      const matches =
+        (port?.code && port.code.toLowerCase().includes(q)) ||
+        (port?.name && port.name.toLowerCase().includes(q)) ||
+        (port?.city && port.city.toLowerCase().includes(q)) ||
+        c.chargeType.toLowerCase().includes(q) ||
+        c.currencyCode.toLowerCase().includes(q) ||
+        c.calcBasis.toLowerCase().includes(q) ||
+        c.chargeSide.toLowerCase().includes(q) ||
+        c.mode.toLowerCase().includes(q) ||
+        c.direction.toLowerCase().includes(q)
+
+      if (!matches) return false
+    }
+
+    return true
+  })
+
+  const hasFilterActive = Boolean(search || modeFilter !== 'all' || directionFilter !== 'all' || sideFilter !== 'all')
+
   return (
     <div className="flex flex-col gap-4 w-full max-w-4xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -104,6 +135,67 @@ export function LocalChargeManagementPage() {
           >
             New charge
           </Button>
+        </div>
+      </div>
+
+      <div className="card-sample flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <Input
+            label="Search"
+            placeholder="Port, charge type..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Select
+            label="Mode"
+            options={[
+              { value: 'all', label: 'All modes' },
+              { value: 'fcl', label: 'FCL' },
+              { value: 'lcl', label: 'LCL' },
+              { value: 'air', label: 'Air' },
+            ]}
+            value={modeFilter}
+            onChange={(e) => setModeFilter(e.target.value as 'all' | 'fcl' | 'lcl' | 'air')}
+          />
+          <Select
+            label="Direction"
+            options={[
+              { value: 'all', label: 'All directions' },
+              { value: 'export', label: 'Export' },
+              { value: 'import', label: 'Import' },
+            ]}
+            value={directionFilter}
+            onChange={(e) => setDirectionFilter(e.target.value as 'all' | 'export' | 'import')}
+          />
+          <Select
+            label="Charge side"
+            options={[
+              { value: 'all', label: 'All sides' },
+              { value: 'origin', label: 'Origin' },
+              { value: 'destination', label: 'Destination' },
+            ]}
+            value={sideFilter}
+            onChange={(e) => setSideFilter(e.target.value as 'all' | 'origin' | 'destination')}
+          />
+        </div>
+        <div className="flex justify-between items-center text-xs text-muted-foreground">
+          <span>
+            Showing {visibleCharges.length} of {charges.items.length} local charges
+          </span>
+          {hasFilterActive && (
+            <button
+              type="button"
+              className="text-xs text-primary underline"
+              onClick={() => {
+                setSearch('')
+                setModeFilter('all')
+                setDirectionFilter('all')
+                setSideFilter('all')
+              }}
+            >
+              Reset filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -162,10 +254,14 @@ export function LocalChargeManagementPage() {
               ),
             },
           ]}
-          rows={charges.items}
+          rows={visibleCharges}
           rowKey={(c) => c.id}
-          emptyTitle="No local charges yet"
-          emptyDescription="Add one manually or import a CSV file."
+          emptyTitle={hasFilterActive && charges.items.length > 0 ? 'No matching local charges' : 'No local charges yet'}
+          emptyDescription={
+            hasFilterActive && charges.items.length > 0
+              ? 'Try adjusting or resetting your search and filter criteria.'
+              : 'Add one manually or import a CSV file.'
+          }
         />
       )}
 

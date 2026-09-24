@@ -36,8 +36,10 @@ export function MasterDataPage() {
 
 function PortsTab() {
   const ports = useCrud<Port>('/api/master/ports', false)
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Port | null>(null)
+  const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'sea' | 'air'>('all')
   const toast = useToast()
 
   const [form, setForm] = useState({ code: '', name: '', city: '', country: '', type: 'sea' as Port['type'] })
@@ -75,9 +77,42 @@ function PortsTab() {
     }
   }
 
+  const visiblePorts = ports.items.filter((p) => {
+    if (typeFilter !== 'all' && p.type !== typeFilter) return false
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      const matches =
+        p.code.toLowerCase().includes(q) ||
+        p.name.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q) ||
+        p.country.toLowerCase().includes(q)
+      if (!matches) return false
+    }
+    return true
+  })
+
+  const hasFilterActive = Boolean(search || typeFilter !== 'all')
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap gap-3 items-end flex-1 max-w-md">
+          <div className="flex-1 min-w-[160px]">
+            <Input label="Search" placeholder="Code, name, city..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div className="w-32">
+            <Select
+              label="Type"
+              options={[
+                { value: 'all', label: 'All types' },
+                { value: 'sea', label: 'Sea' },
+                { value: 'air', label: 'Air' },
+              ]}
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as 'all' | 'sea' | 'air')}
+            />
+          </div>
+        </div>
         <Button onClick={openNew}>New port</Button>
       </div>
       {ports.loading ? (
@@ -102,9 +137,14 @@ function PortsTab() {
               ),
             },
           ]}
-          rows={ports.items}
+          rows={visiblePorts}
           rowKey={(p) => p.id}
-          emptyTitle="No ports yet"
+          emptyTitle={hasFilterActive && ports.items.length > 0 ? 'No matching ports' : 'No ports yet'}
+          emptyDescription={
+            hasFilterActive && ports.items.length > 0
+              ? 'Try adjusting your search criteria.'
+              : undefined
+          }
         />
       )}
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? 'Edit port' : 'New port'}>
@@ -135,6 +175,8 @@ function CarriersTab() {
   const carriers = useCrud<Carrier>('/api/master/carriers', false)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Carrier | null>(null)
+  const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'shippingLine' | 'airline'>('all')
   const [form, setForm] = useState({ code: '', name: '', type: 'shippingLine' as Carrier['type'] })
   const toast = useToast()
 
@@ -168,9 +210,37 @@ function CarriersTab() {
     }
   }
 
+  const visibleCarriers = carriers.items.filter((c) => {
+    if (typeFilter !== 'all' && c.type !== typeFilter) return false
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      if (!c.code.toLowerCase().includes(q) && !c.name.toLowerCase().includes(q)) return false
+    }
+    return true
+  })
+
+  const hasFilterActive = Boolean(search || typeFilter !== 'all')
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap gap-3 items-end flex-1 max-w-md">
+          <div className="flex-1 min-w-[160px]">
+            <Input label="Search" placeholder="Code, name..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div className="w-40">
+            <Select
+              label="Type"
+              options={[
+                { value: 'all', label: 'All types' },
+                { value: 'shippingLine', label: 'Shipping line' },
+                { value: 'airline', label: 'Airline' },
+              ]}
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as 'all' | 'shippingLine' | 'airline')}
+            />
+          </div>
+        </div>
         <Button onClick={openNew}>New carrier</Button>
       </div>
       {carriers.loading ? (
@@ -194,9 +264,14 @@ function CarriersTab() {
               ),
             },
           ]}
-          rows={carriers.items}
+          rows={visibleCarriers}
           rowKey={(c) => c.id}
-          emptyTitle="No carriers yet"
+          emptyTitle={hasFilterActive && carriers.items.length > 0 ? 'No matching carriers' : 'No carriers yet'}
+          emptyDescription={
+            hasFilterActive && carriers.items.length > 0
+              ? 'Try adjusting your search criteria.'
+              : undefined
+          }
         />
       )}
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? 'Edit carrier' : 'New carrier'}>
@@ -347,6 +422,9 @@ function UsersTab() {
   const users = useCrud<OpsUser>('/api/master/users', false)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<OpsUser | null>(null)
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [form, setForm] = useState({ email: '', password: '', role: 'Sale' as UserRole, isActive: true })
   const toast = useToast()
 
@@ -385,9 +463,52 @@ function UsersTab() {
     }
   }
 
+  const visibleUsers = users.items.filter((u) => {
+    if (roleFilter !== 'all' && u.role !== roleFilter) return false
+    if (statusFilter === 'active' && !u.isActive) return false
+    if (statusFilter === 'inactive' && u.isActive) return false
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      if (!u.email.toLowerCase().includes(q)) return false
+    }
+    return true
+  })
+
+  const hasFilterActive = Boolean(search || roleFilter !== 'all' || statusFilter !== 'all')
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap gap-3 items-end flex-1 max-w-xl">
+          <div className="flex-1 min-w-[160px]">
+            <Input label="Search" placeholder="Search email..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div className="w-32">
+            <Select
+              label="Role"
+              options={[
+                { value: 'all', label: 'All roles' },
+                { value: 'Sale', label: 'Sale' },
+                { value: 'Operation', label: 'Operation' },
+                { value: 'Admin', label: 'Admin' },
+              ]}
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as 'all' | UserRole)}
+            />
+          </div>
+          <div className="w-32">
+            <Select
+              label="Status"
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ]}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+            />
+          </div>
+        </div>
         <Button onClick={openNew}>New user</Button>
       </div>
       {users.loading ? (
@@ -411,9 +532,14 @@ function UsersTab() {
               ),
             },
           ]}
-          rows={users.items}
+          rows={visibleUsers}
           rowKey={(u) => u.id}
-          emptyTitle="No users yet"
+          emptyTitle={hasFilterActive && users.items.length > 0 ? 'No matching users' : 'No users yet'}
+          emptyDescription={
+            hasFilterActive && users.items.length > 0
+              ? 'Try adjusting your search criteria.'
+              : undefined
+          }
         />
       )}
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? 'Edit user' : 'New user'}>
