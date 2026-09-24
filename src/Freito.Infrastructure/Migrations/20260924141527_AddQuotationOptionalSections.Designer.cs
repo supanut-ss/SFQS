@@ -4,6 +4,7 @@ using Freito.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Freito.Infrastructure.Migrations
 {
     [DbContext(typeof(FreitoDbContext))]
-    partial class FreitoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924141527_AddQuotationOptionalSections")]
+    partial class AddQuotationOptionalSections
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
