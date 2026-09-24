@@ -2,6 +2,7 @@ using Freito.Api.Models;
 using Freito.Api.Services;
 using Freito.Domain.Entities;
 using Freito.Domain.Enums;
+using Freito.Domain.Quoting;
 using Freito.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -101,6 +102,21 @@ public class QuotationServiceTests
         Assert.Equal(0m, result.FreightCost);
         Assert.Equal(28m, result.LocalChargeTotal);
         Assert.NotNull(result.NoRateFoundReason);
+    }
+
+    [Fact]
+    public async Task ComputeAsync_MissingLocalChargeExchangeRate_ThrowsTypedException()
+    {
+        var db = CreateSeededContext();
+        var thbRate = await db.ExchangeRates.SingleAsync(x => x.CurrencyCode == "THB");
+        db.ExchangeRates.Remove(thbRate);
+        await db.SaveChangesAsync();
+        var service = new QuotationService(db, new AuditLogWriter(db));
+
+        var exception = await Assert.ThrowsAsync<MissingExchangeRateException>(
+            () => service.ComputeAsync(FclRequest(), CancellationToken.None));
+
+        Assert.Equal("THB", exception.CurrencyCode);
     }
 
     [Fact]

@@ -404,7 +404,7 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
         if (currencyCode.Equals(BaseCurrency, StringComparison.OrdinalIgnoreCase)) return 1m;
         return ratesToBase.TryGetValue(currencyCode, out var rate)
             ? rate
-            : throw new InvalidOperationException($"No exchange rate available for currency '{currencyCode}'.");
+            : throw new MissingExchangeRateException(currencyCode);
     }
 
     private static decimal Convert(decimal amount, string fromCurrency, string toCurrency, IReadOnlyDictionary<string, decimal> ratesToBase)

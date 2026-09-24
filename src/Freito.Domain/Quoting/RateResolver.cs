@@ -75,7 +75,7 @@ public static class RateResolver
 
         if (!ratesToBase.TryGetValue(currencyCode, out var rate))
         {
-            throw new InvalidOperationException($"No exchange rate available for currency '{currencyCode}'.");
+            throw new MissingExchangeRateException(currencyCode);
         }
 
         return amount * rate;

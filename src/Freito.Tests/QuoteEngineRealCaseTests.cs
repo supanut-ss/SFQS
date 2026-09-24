@@ -65,7 +65,7 @@ public class QuoteEngineRealCaseTests
     {
         var eurRate = Rate(1, carrierId: 1, price: 500m, currency: "EUR");
 
-        Assert.Throws<InvalidOperationException>(() =>
+        Assert.Throws<MissingExchangeRateException>(() =>
             RateResolver.Resolve([eurRate], new DateTime(2026, 1, 1), "40", null, new Dictionary<string, decimal>()));
     }
 

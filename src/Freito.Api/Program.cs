@@ -6,11 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Freito.Api.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers().AddJsonOptions(options =>
-    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
+builder.Services.AddControllers(options =>
+    options.Filters.Add(new MissingExchangeRateExceptionFilter()))
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
