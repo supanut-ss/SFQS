@@ -20,7 +20,14 @@ export function Select({ label, help, error, required, options, placeholder, cla
   return (
     <Field label={label} help={help} error={error} required={required}>
       {(fieldProps) => (
-        <select className={`select ${className}`.trim()} required={required} defaultValue="" {...fieldProps} {...props}>
+        <select
+          className={`select ${className}`.trim()}
+          required={required}
+          {...(props.value === undefined && props.defaultValue === undefined ? { defaultValue: '' } : {})}
+          {...fieldProps}
+          {...props}
+        >
+
           {placeholder && (
             <option value="" disabled>
               {placeholder}

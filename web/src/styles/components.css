@@ -6,6 +6,65 @@
    same token-driven approach for consistency. See design-system-spec.md.
    Focus rings everywhere use :focus-visible only — see fixing-accessibility. */
 
+.card-sample {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+}
+
+.quote-form {
+  max-width: 640px;
+  width: 100%;
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  background: var(--card-bg);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+.quote-divider {
+  border: none;
+  border-top: 1px solid var(--card-border);
+  margin: 1.5rem 0;
+}
+
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 640px;
+}
+@media (max-width: 640px) {
+  .compare-row { grid-template-columns: 1fr; }
+}
+.compare-card {
+  background: var(--compare-card-bg);
+  border: 1px solid var(--compare-card-border);
+  border-radius: var(--compare-card-radius);
+  padding: var(--compare-card-padding);
+}
+.compare-card.highlight { border: 2px solid var(--compare-card-highlight-border); }
+.compare-card h4 { margin: 0 0 0.25rem; font-size: 0.875rem; }
+.compare-card .total {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+.compare-card .breakdown { font-size: 0.8rem; color: var(--color-muted-foreground); line-height: 1.7; }
+.compare-card .recommended-tag { font-size: 0.7rem; font-weight: 600; color: var(--color-primary); }
+
 .btn {
   display: inline-flex;
   align-items: center;
