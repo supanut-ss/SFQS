@@ -44,13 +44,18 @@ public sealed class FreightRateService(FreitoDbContext db)
         var ports = await db.Ports.AsNoTracking().ToListAsync(cancellationToken);
         var carriers = await db.Carriers.AsNoTracking().ToListAsync(cancellationToken);
         var currencies = await db.Currencies.AsNoTracking().Select(x => x.Code).ToListAsync(cancellationToken);
+        // Lists, not arrays: EF's client-eval interpreter (ExpressionTreeFuncletizer) chokes on
+        // array.Contains(x) inside a query under .NET 10/EF Core 9 — Enumerable.Contains has a
+        // ReadOnlySpan<T> fast path for arrays that the interpreter can't reflectively invoke
+        // (TypeLoadException: ReadOnlySpan violates a generic constraint). List<T>.Contains
+        // doesn't hit that path and translates to SQL IN(...) exactly the same.
         var routeKeys = candidates.Select(x => new RateRouteKey(x.OriginPortId, x.DestinationPortId, x.Mode, x.Direction, x.CarrierId))
-            .Distinct().ToArray();
-        var originIds = routeKeys.Select(x => x.OriginPortId).Distinct().ToArray();
-        var destinationIds = routeKeys.Select(x => x.DestinationPortId).Distinct().ToArray();
-        var modes = routeKeys.Select(x => x.Mode).Distinct().ToArray();
-        var directions = routeKeys.Select(x => x.Direction).Distinct().ToArray();
-        var carrierIds = routeKeys.Select(x => x.CarrierId).Distinct().ToArray();
+            .Distinct().ToList();
+        var originIds = routeKeys.Select(x => x.OriginPortId).Distinct().ToList();
+        var destinationIds = routeKeys.Select(x => x.DestinationPortId).Distinct().ToList();
+        var modes = routeKeys.Select(x => x.Mode).Distinct().ToList();
+        var directions = routeKeys.Select(x => x.Direction).Distinct().ToList();
+        var carrierIds = routeKeys.Select(x => x.CarrierId).Distinct().ToList();
         var activeRates = await db.FreightRates.AsNoTracking()
             .Where(x => x.IsActive && originIds.Contains(x.OriginPortId) && destinationIds.Contains(x.DestinationPortId) &&
                 modes.Contains(x.Mode) && directions.Contains(x.Direction) && carrierIds.Contains(x.CarrierId))

@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { ComponentGallery } from './ComponentGallery'
 import { InstantQuotePage } from './pages/quote/InstantQuotePage'
+import { OpsApp } from './pages/ops/OpsApp'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
-type View = 'quote' | 'gallery'
+type View = 'quote' | 'ops' | 'gallery'
 
 /**
- * T13: the public Instant Quote page is now the real app entry point (ui-plan.md IA page 1-2).
- * No router yet — the component gallery (T11's dev reference) is reachable via a small link
- * at the bottom instead of a route, since it's not a real product page.
+ * T13/T12: the public Instant Quote page and the internal ops area (Rate/Local charge/Master
+ * data management, gated by login) are the two real app surfaces so far (ui-plan.md IA). No
+ * router yet — switched via a small link at the bottom, same pattern as the T11 gallery link.
  */
 function App() {
   const [health, setHealth] = useState<HealthStatus>('checking')
@@ -48,15 +49,23 @@ function App() {
         </span>
       </p>
 
-      <div className="w-full flex justify-center mt-4">{view === 'quote' ? <InstantQuotePage /> : <ComponentGallery />}</div>
+      <div className="w-full flex justify-center mt-4">
+        {view === 'quote' && <InstantQuotePage />}
+        {view === 'ops' && <OpsApp />}
+        {view === 'gallery' && <ComponentGallery />}
+      </div>
 
-      <button
-        type="button"
-        className="text-xs text-muted-foreground underline mt-8"
-        onClick={() => setView(view === 'quote' ? 'gallery' : 'quote')}
-      >
-        {view === 'quote' ? 'View component gallery (dev reference)' : 'Back to Instant Quote'}
-      </button>
+      <div className="flex gap-4 mt-8">
+        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setView('quote')}>
+          Instant Quote
+        </button>
+        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setView('ops')}>
+          Operation / Admin sign in
+        </button>
+        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setView('gallery')}>
+          Component gallery (dev reference)
+        </button>
+      </div>
     </main>
   )
 }
