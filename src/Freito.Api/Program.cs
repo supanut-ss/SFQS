@@ -57,6 +57,12 @@ builder.Services.AddScoped<Freito.Api.Services.LocalChargeService>();
 builder.Services.AddScoped<Freito.Api.Services.FreightRateCsvImporter>();
 builder.Services.AddScoped<Freito.Api.Services.LocalChargeCsvImporter>();
 builder.Services.AddScoped<Freito.Api.Services.QuotationService>();
+builder.Services.AddScoped<Freito.Api.Services.QuotationPdfService>();
+
+// QuestPDF Community license — free for organizations with <$1M USD annual gross revenue or
+// open-source projects (see https://www.questpdf.com/license/). Re-check this before a
+// production deploy if that stops being true for whoever runs Freito.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // Connection string comes from appsettings / environment / Plesk app settings —
 // never hardcoded. See appsettings.json for the expected key.

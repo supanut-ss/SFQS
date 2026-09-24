@@ -39,7 +39,7 @@ public sealed class PublicQuotesController(QuotationService quotes) : Controller
 /// authentication, every call here returns 401 (same interim state as T4's controllers).</summary>
 [ApiController]
 [Route("api/quotes")]
-public sealed class QuotesController(FreitoDbContext db, QuotationService quotes) : ProtectedControllerBase
+public sealed class QuotesController(FreitoDbContext db, QuotationService quotes, QuotationPdfService pdf) : ProtectedControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List(
@@ -115,6 +115,24 @@ public sealed class QuotesController(FreitoDbContext db, QuotationService quotes
             QuotationActionOutcome.NotFound => NotFound(),
             QuotationActionOutcome.InvalidTransition => Conflict(result.Error),
             _ => Ok(result.Quotation),
+        };
+    }
+
+    /// <summary>T9 — the PDF Sale downloads and attaches to their own email/Outlook (no SMTP
+    /// integration in-system, technical-plan.md §7). Only ApprovedAndSent/Confirmed quotes can
+    /// be downloaded — see QuotationPdfService's doc comment for why.</summary>
+    [HttpGet("{id:int}/pdf")]
+    public async Task<IActionResult> DownloadPdf(int id, CancellationToken cancellationToken)
+    {
+        var rejection = RequireRoles(UserRole.Sale, UserRole.Admin);
+        if (rejection is not null) return rejection;
+
+        var result = await pdf.GeneratePdfAsync(id, cancellationToken);
+        return result.Outcome switch
+        {
+            QuotationPdfOutcome.NotFound => NotFound(),
+            QuotationPdfOutcome.NotYetApproved => Conflict("Only an approved quotation can be downloaded as a PDF."),
+            _ => File(result.Bytes!, "application/pdf", result.FileName),
         };
     }
 }

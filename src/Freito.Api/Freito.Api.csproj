@@ -13,11 +13,18 @@
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+    <PackageReference Include="QuestPDF" Version="2026.9.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Freito.Domain\Freito.Domain.csproj" />
     <ProjectReference Include="..\Freito.Infrastructure\Freito.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- Embedded so the PDF header logo works regardless of wwwroot (only populated by
+       BuildWebApp at publish time) — see Quotes/PdfExport/QuotationPdfDocument.cs. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Quotes\PdfExport\Assets\logo-lockup.png" />
   </ItemGroup>
 
   <!--
