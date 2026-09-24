@@ -3,6 +3,26 @@
 แผนกลางที่ session นี้เป็นเจ้าของ รวมงานฝั่ง backend ([technical-plan.md](technical-plan.md)) และ UI ([ui-plan.md](ui-plan.md)) ไว้ในลำดับเดียว
 Leader = Claude Code session นี้ (ถือ architecture, schema, quote engine, approval gate, integration, review ทั้งหมด)
 
+## 0. สรุปภาพรวม (อัปเดตล่าสุด)
+
+**16/17 งานเสร็จแล้ว — เหลือแค่ T16 (deploy ขึ้น Plesk จริง) ที่บล็อกรอสิทธิ์ Plesk จากผู้ใช้**
+
+| หมวด | สถานะ |
+|---|---|
+| **Backend** | ✅ ครบ — quote engine (T5/T6), Quotation API (T7), auth+approval gate (T8), PDF export (T9), master data CRUD (T4) |
+| **Frontend** | ✅ ครบ — component library (T10/T11), public quote form (T13), Operation/Admin pages (T12), Sale inbox+approval (T14) |
+| **Quality** | ✅ ครบ — `dotnet test` 45/45, `npm run build`/`lint` สะอาด, a11y+responsive audit ผ่าน (T15) |
+| **Infra** | 🔶 dev พร้อม (.NET 10 + Docker MySQL) — **prod deploy บน Plesk ยังไม่ได้ทำ (T16)** |
+
+**ทดสอบจริงแล้วทุก flow หลักผ่าน browser + MySQL จริง (ไม่ใช่แค่ unit test)**: guest ขอราคา → submit → Sale approve/reject → ดาวน์โหลด PDF → Operation แก้ rate/local charge → Admin จัดการ master data/users ครบวงจร
+
+**บั๊กจริงที่เจอและแก้ระหว่างทาง** (ดูรายละเอียดในตาราง B แต่ละแถว):
+- Quote number / วันที่ใน PDF อ่าน locale เครื่องเป็นปีพุทธศักราชแทนคริสต์ศักราช (T7, T9) — แก้ด้วย `CultureInfo.InvariantCulture`
+- `array.Contains()` ใน LINQ query พังบน MySQL จริงภายใต้ .NET 10 + EF Core 9 แต่ unit test (EF InMemory) มองไม่เห็น (T12) — ดูความเสี่ยงเปิดใน §E
+- ARIA/responsive: `SegmentedControl` ผิด ARIA spec, ตาราง Rate management ล้นจอมือถือ (T15)
+
+**สิ่งที่ต้องทำต่อ (T16)**: ยืนยันเวอร์ชัน .NET ที่ Plesk hosting รองรับจริง, สร้าง MySQL DB บน Plesk, ตั้งค่า `Jwt:Key`/connection string จริง (ห้ามใช้ค่า dev), deploy แล้วให้ Sale/Operation ทดลองใช้งานจริง (UAT) — ดูรายละเอียดที่แถว T16 ด้านล่าง
+
 ## A. Acceptance criteria → งานที่รองรับ
 
 | # | เกณฑ์รับงาน (จาก requirements.md) | งานที่รองรับ | วิธีพิสูจน์ |
