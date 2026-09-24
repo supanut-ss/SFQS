@@ -3,7 +3,7 @@
 
 import type { ShipmentDirection, TransportMode } from '../ops/types'
 
-export type QuotationStatus = 'draft' | 'pendingSaleApproval' | 'approvedAndSent' | 'confirmed' | 'rejected' | 'expired'
+export type QuotationStatus = 'draft' | 'pendingSaleApproval' | 'approved' | 'approvedAndSent' | 'confirmed' | 'rejected' | 'expired'
 export type RateSource = 'system' | 'refreshed' | 'manual'
 
 export interface Quotation {

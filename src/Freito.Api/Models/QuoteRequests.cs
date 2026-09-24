@@ -139,6 +139,12 @@ public sealed class RejectQuoteRequest
     public string Note { get; init; } = string.Empty;
 }
 
+public sealed class SendQuoteRequest
+{
+    [StringLength(1000)]
+    public string? Note { get; init; }
+}
+
 public sealed record RefreshRateResponse(
     decimal PreviousFreightCost,
     decimal CurrentFreightCost,

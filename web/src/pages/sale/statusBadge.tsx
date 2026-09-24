@@ -4,6 +4,7 @@ import type { QuotationStatus } from './types'
 const STATUS_VARIANT: Record<QuotationStatus, BadgeVariant> = {
   draft: 'info',
   pendingSaleApproval: 'warning',
+  approved: 'success',
   approvedAndSent: 'success',
   confirmed: 'success',
   rejected: 'destructive',
@@ -13,6 +14,7 @@ const STATUS_VARIANT: Record<QuotationStatus, BadgeVariant> = {
 const STATUS_LABEL: Record<QuotationStatus, string> = {
   draft: 'Draft',
   pendingSaleApproval: 'Pending Sale Approval',
+  approved: 'Approved',
   approvedAndSent: 'Approved & Sent',
   confirmed: 'Confirmed',
   rejected: 'Rejected',

@@ -250,7 +250,7 @@ public class QuotationServiceTests
     }
 
     [Fact]
-    public async Task ApproveAsync_FromPendingSaleApproval_Succeeds()
+    public async Task ApproveAsync_FromPendingSaleApproval_SucceedsWithoutSending()
     {
         var db = CreateSeededContext();
         var quotation = await SubmitQuotationAsync(db);
@@ -259,18 +259,49 @@ public class QuotationServiceTests
         var result = await service.ApproveAsync(quotation.Id, actorId: 42, finalPrice: 210m, note: "Discount applied", CancellationToken.None);
 
         Assert.Equal(QuotationActionOutcome.Success, result.Outcome);
-        Assert.Equal(QuotationStatus.ApprovedAndSent, result.Quotation!.Status);
+        Assert.Equal(QuotationStatus.Approved, result.Quotation!.Status);
         Assert.Equal(210m, result.Quotation.FinalPrice);
         Assert.Equal(42, result.Quotation.ApprovedByUserId);
         Assert.NotNull(result.Quotation.ApprovedAt);
-        Assert.NotNull(result.Quotation.SentAt);
+        Assert.Null(result.Quotation.SentAt); // Explicitly NOT sent upon approval
 
         var history = await db.QuotationStatusHistory.Where(h => h.QuotationId == quotation.Id).OrderBy(h => h.Id).ToListAsync();
-        Assert.Equal(QuotationStatus.ApprovedAndSent, history.Last().ToStatus);
+        Assert.Equal(QuotationStatus.Approved, history.Last().ToStatus);
         Assert.Equal(42, history.Last().ActorUserId);
 
         var auditEntry = await db.AuditLogs.SingleAsync(a => a.Entity == "Quotation" && a.EntityId == quotation.Id);
         Assert.Equal(42, auditEntry.ChangedByUserId);
+    }
+
+    [Fact]
+    public async Task SendAsync_FromApproved_SucceedsAndRecordsSentAt()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+        await service.ApproveAsync(quotation.Id, actorId: 42, finalPrice: null, note: "Approved", CancellationToken.None);
+
+        var sendResult = await service.SendAsync(quotation.Id, actorId: 42, note: "Sent via Outlook", CancellationToken.None);
+
+        Assert.Equal(QuotationActionOutcome.Success, sendResult.Outcome);
+        Assert.Equal(QuotationStatus.ApprovedAndSent, sendResult.Quotation!.Status);
+        Assert.NotNull(sendResult.Quotation.SentAt);
+
+        var history = await db.QuotationStatusHistory.Where(h => h.QuotationId == quotation.Id).OrderBy(h => h.Id).ToListAsync();
+        Assert.Equal(QuotationStatus.ApprovedAndSent, history.Last().ToStatus);
+        Assert.Equal("Sent via Outlook", history.Last().Note);
+    }
+
+    [Fact]
+    public async Task SendAsync_DirectlyFromPendingSaleApproval_IsRejectedByTheGate()
+    {
+        var db = CreateSeededContext();
+        var quotation = await SubmitQuotationAsync(db);
+        var service = new QuotationService(db, new AuditLogWriter(db));
+
+        var sendResult = await service.SendAsync(quotation.Id, actorId: 42, note: "Bypass attempt", CancellationToken.None);
+
+        Assert.Equal(QuotationActionOutcome.InvalidTransition, sendResult.Outcome);
     }
 
     [Fact]
@@ -370,7 +401,8 @@ public class QuotationServiceTests
             quotation.Id, actorId: 42, finalPrice: 250m, note: "Approved with custom fee", CancellationToken.None, customizedLines);
 
         Assert.Equal(QuotationActionOutcome.Success, result.Outcome);
-        Assert.Equal(QuotationStatus.ApprovedAndSent, result.Quotation!.Status);
+        Assert.Equal(QuotationStatus.Approved, result.Quotation!.Status);
+        Assert.Null(result.Quotation.SentAt);
         Assert.Equal(250m, result.Quotation.Subtotal); // 180 + 70
         Assert.Equal(250m, result.Quotation.FinalPrice);
 

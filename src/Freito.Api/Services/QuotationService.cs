@@ -269,7 +269,7 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
     {
         var quotation = await db.Quotations.FirstOrDefaultAsync(q => q.Id == quotationId, cancellationToken);
         if (quotation is null) return new QuotationActionResult(QuotationActionOutcome.NotFound);
-        if (quotation.Status is not (QuotationStatus.PendingSaleApproval or QuotationStatus.Draft))
+        if (quotation.Status is not (QuotationStatus.PendingSaleApproval or QuotationStatus.Draft or QuotationStatus.Approved))
             return new QuotationActionResult(QuotationActionOutcome.InvalidTransition, Error: $"Cannot modify lines for a quotation in status {quotation.Status}.");
 
         var existingLines = await db.QuotationLines.Where(l => l.QuotationId == quotationId).ToListAsync(cancellationToken);
@@ -327,7 +327,9 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
 
     /// <summary>The mandatory approval gate (AC3, technical-plan.md §3): only legal from
     /// PendingSaleApproval, enforced via QuotationWorkflow so this can't silently drift from
-    /// RejectAsync's check. Caller (QuotesController) has already verified the actor is Sale or Admin.</summary>
+    /// RejectAsync's check. Caller (QuotesController) has already verified the actor is Sale or Admin.
+    /// Note: Approving marks the quotation as Approved and records ApprovedAt, but does NOT send it
+    /// to the customer yet; Sale/Admin dispatches via SendAsync manually.</summary>
     public async Task<QuotationActionResult> ApproveAsync(
         int quotationId,
         int actorId,
@@ -353,10 +355,9 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
         var now = DateTime.UtcNow;
         quotation.FinalPrice = finalPrice ?? quotation.FinalPrice;
         quotation.DiscountAmount = Math.Max(0, quotation.Subtotal - quotation.FinalPrice);
-        quotation.Status = QuotationStatus.ApprovedAndSent;
+        quotation.Status = QuotationStatus.Approved;
         quotation.ApprovedByUserId = actorId;
         quotation.ApprovedAt = now;
-        quotation.SentAt = now;
 
         db.QuotationStatusHistory.Add(new QuotationStatusHistory
         {
@@ -366,6 +367,39 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
             ActorUserId = actorId,
             At = now,
             Note = note,
+        });
+
+        await audit.SaveAsync(actorId, [PendingAuditChange.Updated("Quotation", quotation.Id, before, quotation)], cancellationToken);
+        return new QuotationActionResult(QuotationActionOutcome.Success, quotation);
+    }
+
+    /// <summary>Decoupled manual dispatch: Sale/Admin explicitly dispatches quotation to customer.
+    /// Advances Approved -> ApprovedAndSent and records SentAt.</summary>
+    public async Task<QuotationActionResult> SendAsync(
+        int quotationId,
+        int actorId,
+        string? note,
+        CancellationToken cancellationToken)
+    {
+        var quotation = await db.Quotations.FirstOrDefaultAsync(q => q.Id == quotationId, cancellationToken);
+        if (quotation is null) return new QuotationActionResult(QuotationActionOutcome.NotFound);
+        if (!QuotationWorkflow.CanSend(quotation.Status))
+            return new QuotationActionResult(QuotationActionOutcome.InvalidTransition, Error: $"Cannot send a quotation in status {quotation.Status}.");
+
+        var before = AuditLogWriter.Snapshot(quotation);
+        var fromStatus = quotation.Status;
+        var now = DateTime.UtcNow;
+        quotation.Status = QuotationStatus.ApprovedAndSent;
+        quotation.SentAt = now;
+
+        db.QuotationStatusHistory.Add(new QuotationStatusHistory
+        {
+            QuotationId = quotation.Id,
+            FromStatus = fromStatus,
+            ToStatus = quotation.Status,
+            ActorUserId = actorId,
+            At = now,
+            Note = note ?? "Sent to customer",
         });
 
         await audit.SaveAsync(actorId, [PendingAuditChange.Updated("Quotation", quotation.Id, before, quotation)], cancellationToken);

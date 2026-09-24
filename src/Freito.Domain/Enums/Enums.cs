@@ -74,6 +74,7 @@ public enum QuotationStatus
 {
     Draft,
     PendingSaleApproval,
+    Approved,
     ApprovedAndSent,
     Confirmed,
     Rejected,

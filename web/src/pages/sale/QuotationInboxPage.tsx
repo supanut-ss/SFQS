@@ -15,6 +15,7 @@ interface Paged<T> {
 const STATUS_OPTIONS: { value: QuotationStatus | ''; label: string }[] = [
   { value: '', label: 'All statuses' },
   { value: 'pendingSaleApproval', label: 'Pending Sale Approval' },
+  { value: 'approved', label: 'Approved' },
   { value: 'approvedAndSent', label: 'Approved & Sent' },
   { value: 'confirmed', label: 'Confirmed' },
   { value: 'rejected', label: 'Rejected' },

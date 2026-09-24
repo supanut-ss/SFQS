@@ -137,6 +137,22 @@ public sealed class QuotesController(FreitoDbContext db, QuotationService quotes
         };
     }
 
+    /// <summary>Sale or Admin manually dispatches quotation to customer.</summary>
+    [HttpPost("{id:int}/send")]
+    public async Task<IActionResult> Send(int id, SendQuoteRequest? request, CancellationToken cancellationToken)
+    {
+        var rejection = RequireActor(out var actorId, UserRole.Sale, UserRole.Admin);
+        if (rejection is not null) return rejection;
+
+        var result = await quotes.SendAsync(id, actorId, request?.Note, cancellationToken);
+        return result.Outcome switch
+        {
+            QuotationActionOutcome.NotFound => NotFound(),
+            QuotationActionOutcome.InvalidTransition => Conflict(result.Error),
+            _ => Ok(result.Quotation),
+        };
+    }
+
     /// <summary>T9 — the PDF Sale downloads and attaches to their own email/Outlook (no SMTP
     /// integration in-system, technical-plan.md §7). Only ApprovedAndSent/Confirmed quotes can
     /// be downloaded — see QuotationPdfService's doc comment for why.</summary>

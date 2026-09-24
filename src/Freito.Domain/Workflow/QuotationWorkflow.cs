@@ -15,8 +15,9 @@ public static class QuotationWorkflow
         new Dictionary<QuotationStatus, QuotationStatus[]>
         {
             [QuotationStatus.Draft] = [QuotationStatus.PendingSaleApproval],
-            [QuotationStatus.PendingSaleApproval] = [QuotationStatus.ApprovedAndSent, QuotationStatus.Rejected],
-            [QuotationStatus.ApprovedAndSent] = [QuotationStatus.Confirmed, QuotationStatus.Rejected, QuotationStatus.Expired],
+            [QuotationStatus.PendingSaleApproval] = [QuotationStatus.Approved, QuotationStatus.Rejected],
+            [QuotationStatus.Approved] = [QuotationStatus.ApprovedAndSent, QuotationStatus.Confirmed, QuotationStatus.Rejected, QuotationStatus.Expired],
+            [QuotationStatus.ApprovedAndSent] = [QuotationStatus.ApprovedAndSent, QuotationStatus.Confirmed, QuotationStatus.Rejected, QuotationStatus.Expired],
             [QuotationStatus.Rejected] = [],
             [QuotationStatus.Confirmed] = [],
             [QuotationStatus.Expired] = [],
@@ -25,7 +26,9 @@ public static class QuotationWorkflow
     public static bool CanTransition(QuotationStatus from, QuotationStatus to) =>
         AllowedTransitions.TryGetValue(from, out var allowed) && allowed.Contains(to);
 
-    public static bool CanApprove(QuotationStatus status) => CanTransition(status, QuotationStatus.ApprovedAndSent);
+    public static bool CanApprove(QuotationStatus status) => CanTransition(status, QuotationStatus.Approved);
+
+    public static bool CanSend(QuotationStatus status) => CanTransition(status, QuotationStatus.ApprovedAndSent);
 
     public static bool CanReject(QuotationStatus status) => CanTransition(status, QuotationStatus.Rejected);
 }

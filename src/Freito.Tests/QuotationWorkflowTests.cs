@@ -11,6 +11,7 @@ public class QuotationWorkflowTests
     [Theory]
     [InlineData(QuotationStatus.PendingSaleApproval, true)]
     [InlineData(QuotationStatus.Draft, false)]
+    [InlineData(QuotationStatus.Approved, false)]
     [InlineData(QuotationStatus.ApprovedAndSent, false)]
     [InlineData(QuotationStatus.Rejected, false)]
     [InlineData(QuotationStatus.Confirmed, false)]
@@ -21,8 +22,22 @@ public class QuotationWorkflowTests
     }
 
     [Theory]
+    [InlineData(QuotationStatus.Approved, true)]
+    [InlineData(QuotationStatus.ApprovedAndSent, true)]
+    [InlineData(QuotationStatus.PendingSaleApproval, false)]
+    [InlineData(QuotationStatus.Draft, false)]
+    [InlineData(QuotationStatus.Rejected, false)]
+    [InlineData(QuotationStatus.Confirmed, false)]
+    [InlineData(QuotationStatus.Expired, false)]
+    public void CanSend_OnlyWhenApprovedOrAlreadySent(QuotationStatus status, bool expected)
+    {
+        Assert.Equal(expected, QuotationWorkflow.CanSend(status));
+    }
+
+    [Theory]
     [InlineData(QuotationStatus.PendingSaleApproval, true)]
-    [InlineData(QuotationStatus.ApprovedAndSent, true)] // Sale can still reject after sending
+    [InlineData(QuotationStatus.Approved, true)]
+    [InlineData(QuotationStatus.ApprovedAndSent, true)] // Sale can still reject after approval or sending
     [InlineData(QuotationStatus.Draft, false)]
     [InlineData(QuotationStatus.Rejected, false)]
     public void CanReject_FromPendingOrApproved(QuotationStatus status, bool expected)
@@ -33,6 +48,7 @@ public class QuotationWorkflowTests
     [Fact]
     public void CanTransition_NeverSkipsPendingSaleApproval()
     {
+        Assert.False(QuotationWorkflow.CanTransition(QuotationStatus.Draft, QuotationStatus.Approved));
         Assert.False(QuotationWorkflow.CanTransition(QuotationStatus.Draft, QuotationStatus.ApprovedAndSent));
     }
 }

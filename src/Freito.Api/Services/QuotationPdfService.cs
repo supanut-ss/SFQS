@@ -26,7 +26,7 @@ public sealed class QuotationPdfService(FreitoDbContext db)
     {
         var quotation = await db.Quotations.AsNoTracking().FirstOrDefaultAsync(q => q.Id == quotationId, cancellationToken);
         if (quotation is null) return new QuotationPdfResult(QuotationPdfOutcome.NotFound);
-        if (quotation.Status is not (QuotationStatus.ApprovedAndSent or QuotationStatus.Confirmed))
+        if (quotation.Status is not (QuotationStatus.Approved or QuotationStatus.ApprovedAndSent or QuotationStatus.Confirmed))
             return new QuotationPdfResult(QuotationPdfOutcome.NotYetApproved);
 
         var lines = await db.QuotationLines.AsNoTracking()

@@ -135,6 +135,19 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
     }
   }
 
+  const triggerMailto = () => {
+    if (!detail) return
+    const q = detail.quotation
+    const subject = encodeURIComponent(`Quotation ${q.quoteNo} - Freito Logistics`)
+    const body = encodeURIComponent(
+      `Dear ${q.customerName},\n\nPlease find attached quotation ${q.quoteNo} for your shipment.\n\nTotal: ${formatMoney(q.finalPrice, q.quoteCurrency)}\n\nBest regards,\nFreito Team`
+    )
+    const mailtoUrl = `mailto:${q.customerEmail}?subject=${subject}&body=${body}`
+    const link = document.createElement('a')
+    link.href = mailtoUrl
+    link.click()
+  }
+
   const handleApprove = async () => {
     setBusy(true)
     try {
@@ -144,10 +157,24 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
         note: note || undefined,
         lines: formatted,
       })
-      toast.show('Quotation approved and marked as sent', 'success')
+      toast.show('Quotation approved', 'success')
       load()
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to approve quotation', 'destructive')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleSend = async () => {
+    setBusy(true)
+    try {
+      await api.post(`/api/quotes/${id}/send`, { note: 'Sent to customer manually' })
+      toast.show('Quotation marked as sent', 'success')
+      triggerMailto()
+      load()
+    } catch (err) {
+      toast.show(err instanceof ApiError ? err.message : 'Failed to send quotation', 'destructive')
     } finally {
       setBusy(false)
     }
@@ -189,7 +216,8 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
 
   const { quotation, lines } = detail
   const canDecide = quotation.status === 'pendingSaleApproval'
-  const canDownloadPdf = quotation.status === 'approvedAndSent' || quotation.status === 'confirmed'
+  const isApproved = quotation.status === 'approved'
+  const isSent = quotation.status === 'approvedAndSent'
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-3xl">
@@ -397,16 +425,47 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                 Reject
               </Button>
               <Button variant="success" onClick={handleApprove} disabled={busy}>
-                Approve &amp; send to customer
+                Approve quotation
               </Button>
             </div>
           </>
         )}
 
-        {canDownloadPdf && (
-          <Button variant="outline" onClick={handleDownloadPdf}>
-            Download PDF
-          </Button>
+        {isApproved && (
+          <div className="flex flex-col gap-3 p-4 bg-muted/40 border border-border rounded-lg">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Quotation approved</p>
+                <p className="text-xs text-muted-foreground">
+                  Review or download the PDF quotation, then send it manually to the customer.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" onClick={handleDownloadPdf}>
+                  Download PDF
+                </Button>
+                <Button type="button" variant="success" onClick={handleSend} disabled={busy}>
+                  {busy ? 'Sending…' : 'Send to customer'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {(isSent || quotation.status === 'confirmed') && (
+          <div className="flex items-center justify-between flex-wrap gap-2 p-3 bg-muted/20 border border-border rounded-lg">
+            <div className="text-xs text-muted-foreground">
+              {quotation.sentAt ? `Dispatched to customer on ${quotation.sentAt.slice(0, 10)}` : 'Dispatched to customer'}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" onClick={handleDownloadPdf}>
+                Download PDF
+              </Button>
+              <Button type="button" variant="secondary" onClick={triggerMailto}>
+                Compose email (Outlook)
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </div>
