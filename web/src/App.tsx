@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ComponentGallery } from './ComponentGallery'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
 
@@ -25,7 +26,7 @@ function App() {
   }, [])
 
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center gap-4 bg-background text-foreground">
+    <main className="min-h-dvh flex flex-col items-center gap-4 bg-background text-foreground py-10">
       <img src="/logo-icon.png" alt="Freito logo" className="h-10 w-auto" />
       <h1 className="font-heading text-2xl font-semibold">Freito</h1>
       <p className="text-sm text-muted-foreground">Smart Freight Quotation System</p>
@@ -43,6 +44,8 @@ function App() {
           {health === 'checking' ? 'checking…' : health === 'ok' ? 'reachable' : 'unreachable'}
         </span>
       </p>
+      {/* T11 component library — dev-only reference, replaced by real pages in T12-T14. */}
+      <ComponentGallery />
     </main>
   )
 }

@@ -2,6 +2,7 @@
    `npm run tokens:sync` (see scripts/sync-tokens.mjs). Do not edit this
    file's imported content by hand. */
 @import "./styles/tokens.css";
+@import "./styles/components.css";
 
 @tailwind base;
 @tailwind components;
