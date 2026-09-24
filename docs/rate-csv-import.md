@@ -22,7 +22,7 @@ Example row (illustrative only; referenced master data must already exist):
 THLCH,CNNGB,Lcl,Import,EXAMPLE-LINE,12.50,15.00,USD,2026-10-01,2026-12-31
 ```
 
-`mode` accepts `Fcl`, `Lcl`, or `Air`; `direction` accepts `Import` or `Export`. FCL requires `container_size`; LCL has no container or weight break; Air requires a weight break and cannot exceed 500 kg. Air weight breaks include their lower bound and exclude their upper bound, except that 500 kg is included in the final break. `valid_from` and `valid_to` use inclusive `YYYY-MM-DD` dates. Active rates for the same route, carrier, and overlapping slot/date range are rejected.
+`mode` accepts `Fcl`, `Lcl`, or `Air`; `direction` accepts `Import` or `Export`. FCL requires `container_size`; LCL has no container or weight break; Air requires a weight break and cannot exceed 500 kg. Air weight breaks include their lower bound and exclude their upper bound, except that 500 kg is included in the final break. `valid_from` and `valid_to` use inclusive `YYYY-MM-DD` dates. Active rates matching the same route, carrier, slot, and validity window are updated in place with the newly imported prices.
 
 ## Local charges
 
@@ -42,4 +42,4 @@ Example row (illustrative only; referenced master data must already exist):
 THLCH,Import,Lcl,CFS,PerRevenueTon,12.50,15.00,USD,Origin
 ```
 
-`calc_basis` accepts `PerShipment`, `PerContainer`, `PerRevenueTon`, `PerCBM`, `PerKG`, or `NotQuotable`; `charge_side` accepts `Origin` or `Destination`. Use a dot for decimal fractions and omit thousands separators. Repeated natural keys are rejected so importing the same file cannot create duplicate charges.
+`calc_basis` accepts `PerShipment`, `PerContainer`, `PerRevenueTon`, `PerCBM`, `PerKG`, or `NotQuotable`; `charge_side` accepts `Origin` or `Destination`. Use a dot for decimal fractions and omit thousands separators. Existing charges matching the same natural key (port, direction, mode, charge type, basis, side, currency) are updated in place with the newly imported amounts instead of being rejected as duplicates.

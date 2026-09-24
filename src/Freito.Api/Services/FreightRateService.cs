@@ -25,15 +25,16 @@ public sealed class FreightRateService(FreitoDbContext db)
 
     public async Task<IReadOnlyList<EntityValidationResult>> ValidateBatchAsync(
         IReadOnlyList<FreightRate> rates,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowExistingUpdate = false)
     {
         var context = await LoadContextAsync(rates, cancellationToken);
         var results = new List<EntityValidationResult>(rates.Count);
         foreach (var rate in rates)
         {
-            var result = ValidateAgainst(rate, null, context);
+            var result = ValidateAgainst(rate, null, context, allowExistingUpdate);
             results.Add(result);
-            if (result.IsValid) context.ActiveRates.Add(rate);
+            if (result.IsValid && !allowExistingUpdate) context.ActiveRates.Add(rate);
         }
 
         return results;
@@ -63,7 +64,7 @@ public sealed class FreightRateService(FreitoDbContext db)
         return new ValidationContext(ports, carriers, currencies, activeRates);
     }
 
-    private static EntityValidationResult ValidateAgainst(FreightRate rate, int? excludedId, ValidationContext context)
+    private static EntityValidationResult ValidateAgainst(FreightRate rate, int? excludedId, ValidationContext context, bool allowExistingUpdate = false)
     {
         var errors = new List<string>();
         if (!Enum.IsDefined(rate.Mode)) errors.Add("Mode is not supported.");
@@ -128,21 +129,25 @@ public sealed class FreightRateService(FreitoDbContext db)
 
         if (errors.Count > 0) return new EntityValidationResult(errors);
 
-        var collision = context.ActiveRates.FirstOrDefault(other =>
-            other.Id != excludedId &&
-            other.OriginPortId == rate.OriginPortId &&
-            other.DestinationPortId == rate.DestinationPortId &&
-            other.Mode == rate.Mode &&
-            other.Direction == rate.Direction &&
-            other.CarrierId == rate.CarrierId &&
-            SameRateSlot(other, rate) &&
-            rate.ValidFrom.Date <= other.ValidTo.Date && other.ValidFrom.Date <= rate.ValidTo.Date);
-        return collision is null
-            ? new EntityValidationResult(Array.Empty<string>())
-            : new EntityValidationResult(["An active rate for this route, carrier, and validity window already exists."], IsConflict: true);
+        if (!allowExistingUpdate)
+        {
+            var collision = context.ActiveRates.FirstOrDefault(other =>
+                other.Id != excludedId &&
+                other.OriginPortId == rate.OriginPortId &&
+                other.DestinationPortId == rate.DestinationPortId &&
+                other.Mode == rate.Mode &&
+                other.Direction == rate.Direction &&
+                other.CarrierId == rate.CarrierId &&
+                SameRateSlot(other, rate) &&
+                rate.ValidFrom.Date <= other.ValidTo.Date && other.ValidFrom.Date <= rate.ValidTo.Date);
+            if (collision is not null)
+                return new EntityValidationResult(["An active rate for this route, carrier, and validity window already exists."], IsConflict: true);
+        }
+
+        return new EntityValidationResult(Array.Empty<string>());
     }
 
-    private static bool SameRateSlot(FreightRate left, FreightRate right)
+    public static bool SameRateSlot(FreightRate left, FreightRate right)
     {
         if (left.Mode == TransportMode.Air)
         {

@@ -81,7 +81,8 @@ public sealed class LocalChargeCsvImporter(
             }));
         }
 
-        var validations = await charges.ValidateBatchAsync(candidates.Select(x => x.Charge).ToArray(), cancellationToken);
+        var validations = await charges.ValidateBatchAsync(
+            candidates.Select(x => x.Charge).ToArray(), cancellationToken, allowExistingUpdate: true);
         for (var index = 0; index < validations.Count; index++)
         {
             var validation = validations[index];
@@ -90,11 +91,33 @@ public sealed class LocalChargeCsvImporter(
 
         if (issues.Count > 0) return new CsvImportResult(0, issues.OrderBy(x => x.Row).ToArray());
 
+        var existingCharges = await db.LocalCharges.ToListAsync(cancellationToken);
         var changes = new List<PendingAuditChange>(candidates.Count);
         foreach (var (_, charge) in candidates)
         {
-            db.LocalCharges.Add(charge);
-            changes.Add(PendingAuditChange.Created("LocalCharge", charge, () => charge.Id));
+            var match = existingCharges.FirstOrDefault(e =>
+                e.PortId == charge.PortId &&
+                e.Direction == charge.Direction &&
+                e.Mode == charge.Mode &&
+                e.ChargeSide == charge.ChargeSide &&
+                e.CalcBasis == charge.CalcBasis &&
+                e.CurrencyCode.Equals(charge.CurrencyCode, StringComparison.OrdinalIgnoreCase) &&
+                e.ChargeType.Equals(charge.ChargeType, StringComparison.OrdinalIgnoreCase));
+
+            if (match is not null)
+            {
+                var before = AuditLogWriter.Snapshot(match);
+                match.AmountMin = charge.AmountMin;
+                match.AmountMax = charge.AmountMax;
+                match.MinimumCharge = charge.MinimumCharge;
+                changes.Add(PendingAuditChange.Updated("LocalCharge", match.Id, before, match));
+            }
+            else
+            {
+                db.LocalCharges.Add(charge);
+                existingCharges.Add(charge);
+                changes.Add(PendingAuditChange.Created("LocalCharge", charge, () => charge.Id));
+            }
         }
 
         await audit.SaveAsync(actorId, changes, cancellationToken);

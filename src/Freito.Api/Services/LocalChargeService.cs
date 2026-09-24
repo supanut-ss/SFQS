@@ -18,15 +18,16 @@ public sealed class LocalChargeService(FreitoDbContext db)
 
     public async Task<IReadOnlyList<EntityValidationResult>> ValidateBatchAsync(
         IReadOnlyList<LocalCharge> charges,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowExistingUpdate = false)
     {
         var context = await LoadContextAsync(cancellationToken);
         var results = new List<EntityValidationResult>(charges.Count);
         foreach (var charge in charges)
         {
-            var result = ValidateAgainst(charge, null, context);
+            var result = ValidateAgainst(charge, null, context, allowExistingUpdate);
             results.Add(result);
-            if (result.IsValid) context.ExistingCharges.Add(charge);
+            if (result.IsValid && !allowExistingUpdate) context.ExistingCharges.Add(charge);
         }
 
         return results;
@@ -40,7 +41,7 @@ public sealed class LocalChargeService(FreitoDbContext db)
         return new ValidationContext(ports, currencies, charges);
     }
 
-    private static EntityValidationResult ValidateAgainst(LocalCharge charge, int? excludedId, ValidationContext context)
+    private static EntityValidationResult ValidateAgainst(LocalCharge charge, int? excludedId, ValidationContext context, bool allowExistingUpdate = false)
     {
         var errors = new List<string>();
         if (!Enum.IsDefined(charge.Direction)) errors.Add("Direction is not supported.");
@@ -83,18 +84,22 @@ public sealed class LocalChargeService(FreitoDbContext db)
 
         if (errors.Count > 0) return new EntityValidationResult(errors);
 
-        var duplicate = context.ExistingCharges.FirstOrDefault(existing =>
-            existing.Id != excludedId &&
-            existing.PortId == charge.PortId &&
-            existing.Direction == charge.Direction &&
-            existing.Mode == charge.Mode &&
-            existing.ChargeSide == charge.ChargeSide &&
-            existing.CalcBasis == charge.CalcBasis &&
-            existing.CurrencyCode.Equals(charge.CurrencyCode, StringComparison.OrdinalIgnoreCase) &&
-            existing.ChargeType.Equals(charge.ChargeType, StringComparison.OrdinalIgnoreCase));
-        return duplicate is null
-            ? new EntityValidationResult(Array.Empty<string>())
-            : new EntityValidationResult(["A charge with this port, direction, mode, charge type, basis, side, and currency already exists."], IsConflict: true);
+        if (!allowExistingUpdate)
+        {
+            var duplicate = context.ExistingCharges.FirstOrDefault(existing =>
+                existing.Id != excludedId &&
+                existing.PortId == charge.PortId &&
+                existing.Direction == charge.Direction &&
+                existing.Mode == charge.Mode &&
+                existing.ChargeSide == charge.ChargeSide &&
+                existing.CalcBasis == charge.CalcBasis &&
+                existing.CurrencyCode.Equals(charge.CurrencyCode, StringComparison.OrdinalIgnoreCase) &&
+                existing.ChargeType.Equals(charge.ChargeType, StringComparison.OrdinalIgnoreCase));
+            if (duplicate is not null)
+                return new EntityValidationResult(["A charge with this port, direction, mode, charge type, basis, side, and currency already exists."], IsConflict: true);
+        }
+
+        return new EntityValidationResult(Array.Empty<string>());
     }
 
     public static LocalCharge ToEntity(LocalChargeRequest request) => new()

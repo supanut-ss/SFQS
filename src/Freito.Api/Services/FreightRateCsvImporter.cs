@@ -97,7 +97,8 @@ public sealed class FreightRateCsvImporter(
         }
 
         await using var transaction = await rates.BeginWriteTransactionAsync(cancellationToken);
-        var validations = await rates.ValidateBatchAsync(candidates.Select(x => x.Rate).ToArray(), cancellationToken);
+        var validations = await rates.ValidateBatchAsync(
+            candidates.Select(x => x.Rate).ToArray(), cancellationToken, allowExistingUpdate: true);
         for (var index = 0; index < validations.Count; index++)
         {
             var validation = validations[index];
@@ -106,11 +107,47 @@ public sealed class FreightRateCsvImporter(
 
         if (issues.Count > 0) return new CsvImportResult(0, issues.OrderBy(x => x.Row).ToArray());
 
+        var routeKeys = candidates.Select(x => (x.Rate.OriginPortId, x.Rate.DestinationPortId, x.Rate.Mode, x.Rate.Direction, x.Rate.CarrierId))
+            .Distinct().ToList();
+        var originIds = routeKeys.Select(x => x.OriginPortId).Distinct().ToList();
+        var destinationIds = routeKeys.Select(x => x.DestinationPortId).Distinct().ToList();
+        var modes = routeKeys.Select(x => x.Mode).Distinct().ToList();
+        var directions = routeKeys.Select(x => x.Direction).Distinct().ToList();
+        var carrierIds = routeKeys.Select(x => x.CarrierId).Distinct().ToList();
+
+        var existingRates = await db.FreightRates
+            .Where(x => x.IsActive && originIds.Contains(x.OriginPortId) && destinationIds.Contains(x.DestinationPortId) &&
+                modes.Contains(x.Mode) && directions.Contains(x.Direction) && carrierIds.Contains(x.CarrierId))
+            .ToListAsync(cancellationToken);
+
         var changes = new List<PendingAuditChange>(candidates.Count);
         foreach (var (_, rate) in candidates)
         {
-            db.FreightRates.Add(rate);
-            changes.Add(PendingAuditChange.Created("FreightRate", rate, () => rate.Id));
+            var match = existingRates.FirstOrDefault(other =>
+                other.OriginPortId == rate.OriginPortId &&
+                other.DestinationPortId == rate.DestinationPortId &&
+                other.Mode == rate.Mode &&
+                other.Direction == rate.Direction &&
+                other.CarrierId == rate.CarrierId &&
+                FreightRateService.SameRateSlot(other, rate) &&
+                rate.ValidFrom.Date <= other.ValidTo.Date && other.ValidFrom.Date <= rate.ValidTo.Date);
+
+            if (match is not null)
+            {
+                var before = AuditLogWriter.Snapshot(match);
+                match.PriceMin = rate.PriceMin;
+                match.PriceMax = rate.PriceMax;
+                match.CurrencyCode = rate.CurrencyCode;
+                match.ValidFrom = rate.ValidFrom;
+                match.ValidTo = rate.ValidTo;
+                changes.Add(PendingAuditChange.Updated("FreightRate", match.Id, before, match));
+            }
+            else
+            {
+                db.FreightRates.Add(rate);
+                existingRates.Add(rate);
+                changes.Add(PendingAuditChange.Created("FreightRate", rate, () => rate.Id));
+            }
         }
 
         await audit.SaveAsync(actorId, changes, cancellationToken);
