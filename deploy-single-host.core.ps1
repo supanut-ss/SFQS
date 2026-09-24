@@ -1,4 +1,4 @@
-<#
+﻿<#
     Freito single-host deployment workflow for the Plesk host.
     Credentials are supplied by the local, ignored deploy-single-host.ps1.
 #>
@@ -175,12 +175,38 @@ try {
     $maintenanceHtml = @"
 <!doctype html>
 <html lang="th">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Freito กำลังอัปเดต</title>
-<style>body{font-family:Segoe UI,sans-serif;background:#08101d;color:#eaf3f7;display:grid;place-items:center;min-height:100vh;margin:0}.card{max-width:36rem;padding:2rem;border:1px solid #24415a;border-radius:1rem;background:#101b2b;text-align:center}h1{color:#38b6c3}p{line-height:1.7;color:#b7c9d3}</style></head>
-<body><main class="card"><h1>Freito กำลังอัปเดตระบบ</h1><p>กรุณารอสักครู่ แล้วลองเปิดหน้าเว็บอีกครั้ง</p></main></body>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="10">
+<title>Freito - &#3585;&#3635;&#3621;&#3633;&#3591;&#3629;&#3633;&#3611;&#3648;&#3604;&#3605;&#3619;&#3632;&#3610;&#3610; (System Updating)</title>
+<style>
+body{font-family:Segoe UI,-apple-system,sans-serif;background:#08101d;color:#eaf3f7;display:grid;place-items:center;min-height:100vh;margin:0;padding:1rem;box-sizing:border-box}
+.card{max-width:38rem;width:100%;padding:2.5rem 2rem;border:1px solid #24415a;border-radius:1rem;background:#101b2b;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+.spinner{width:36px;height:36px;border:3px solid #24415a;border-top-color:#38b6c3;border-radius:50%;margin:0 auto 1.25rem;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+h1{color:#38b6c3;margin:0 0 0.5rem;font-size:1.5rem}
+.th-sub{font-size:1rem;color:#d0e0ea;margin:0 0 0.75rem;line-height:1.6}
+.en-sub{font-size:0.875rem;color:#8fa6b5;margin:0;line-height:1.5}
+.auto-refresh{font-size:0.75rem;color:#5a7587;margin-top:1.5rem}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="spinner"></div>
+  <h1>Freito &#3585;&#3635;&#3621;&#3633;&#3591;&#3629;&#3633;&#3611;&#3648;&#3604;&#3605;&#3619;&#3632;&#3610;&#3610;</h1>
+  <p class="th-sub">&#3619;&#3632;&#3610;&#3610;&#3585;&#3635;&#3621;&#3633;&#3591;&#3629;&#3618;&#3641;&#3656;&#3619;&#3632;&#3627;&#3623;&#3656;&#3634;&#3591;&#3585;&#3634;&#3619;&#3611;&#3619;&#3633;&#3610;&#3611;&#3619;&#3640;&#3591; &#3585;&#3619;&#3640;&#3603;&#3634;&#3619;&#3629;&#3626;&#3633;&#3585;&#3588;&#3619;&#3641;&#3656;&#3649;&#3621;&#3657;&#3623;&#3621;&#3629;&#3591;&#3619;&#3637;&#3648;&#3615;&#3619;&#3594;&#3627;&#3609;&#3657;&#3634;&#3648;&#3623;&#3655;&#3610;&#3651;&#3627;&#3617;&#3656;&#3629;&#3637;&#3585;&#3588;&#3619;&#3633;&#3657;&#3591;</p>
+  <p class="en-sub">System is updating. Please wait a moment, this page will refresh automatically.</p>
+  <p class="auto-refresh">&#8635; Auto-refreshing every 10 seconds...</p>
+</main>
+</body>
 </html>
 "@
-    [System.IO.File]::WriteAllText($appOfflinePath, $maintenanceHtml, [System.Text.UTF8Encoding]::new($false))
+    [System.IO.File]::WriteAllText($appOfflinePath, $maintenanceHtml, [System.Text.UTF8Encoding]::new($true))
 
     $pwsh = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
     if (-not $pwsh) { $pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source }
