@@ -128,7 +128,8 @@ public sealed class FreightRateCsvImporter(
     private static T ParseEnum<T>(string value, string field, List<string> errors) where T : struct, Enum
     {
         if (Enum.TryParse<T>(value, true, out var parsed) && Enum.IsDefined(parsed)) return parsed;
-        errors.Add($"'{field}' must be a valid {typeof(T).Name} value.");
+        var validOptions = string.Join(", ", Enum.GetNames<T>());
+        errors.Add($"'{field}' must be one of: {validOptions} (received '{value}').");
         return default;
     }
 
