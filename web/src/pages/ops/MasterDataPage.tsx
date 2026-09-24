@@ -45,25 +45,38 @@ function PortsTab() {
   const [editing, setEditing] = useState<Port | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'sea' | 'air'>('all')
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const toast = useToast()
 
   const [form, setForm] = useState({ code: '', name: '', city: '', country: '', type: 'sea' as Port['type'] })
-
   const [deletingPort, setDeletingPort] = useState<Port | null>(null)
 
   const openNew = () => {
     setEditing(null)
     setForm({ code: '', name: '', city: '', country: '', type: 'sea' })
+    setErrors({})
     setOpen(true)
   }
 
   const openEdit = (port: Port) => {
     setEditing(port)
     setForm({ code: port.code, name: port.name, city: port.city, country: port.country, type: port.type })
+    setErrors({})
     setOpen(true)
   }
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!form.code.trim()) errs.code = 'Code is required'
+    if (!form.name.trim()) errs.name = 'Name is required'
+    if (!form.city.trim()) errs.city = 'City is required'
+    if (!form.country.trim()) errs.country = 'Country is required'
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
   const save = async () => {
+    if (!validate()) return
     try {
       if (editing) await ports.update(editing.id, form)
       else await ports.create(form)
@@ -157,11 +170,43 @@ function PortsTab() {
       )}
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? 'Edit port' : 'New port'}>
         <div className="flex flex-col gap-4">
-          <Input label="Code (UN/LOCODE)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-          <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input
+            label="Code (UN/LOCODE)"
+            error={errors.code}
+            value={form.code}
+            onChange={(e) => {
+              setForm({ ...form, code: e.target.value })
+              setErrors((prev) => ({ ...prev, code: '' }))
+            }}
+          />
+          <Input
+            label="Name"
+            error={errors.name}
+            value={form.name}
+            onChange={(e) => {
+              setForm({ ...form, name: e.target.value })
+              setErrors((prev) => ({ ...prev, name: '' }))
+            }}
+          />
           <div className="form-row">
-            <Input label="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-            <Input label="Country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+            <Input
+              label="City"
+              error={errors.city}
+              value={form.city}
+              onChange={(e) => {
+                setForm({ ...form, city: e.target.value })
+                setErrors((prev) => ({ ...prev, city: '' }))
+              }}
+            />
+            <Input
+              label="Country"
+              error={errors.country}
+              value={form.country}
+              onChange={(e) => {
+                setForm({ ...form, country: e.target.value })
+                setErrors((prev) => ({ ...prev, country: '' }))
+              }}
+            />
           </div>
           <Select
             label="Type"
@@ -201,20 +246,31 @@ function CarriersTab() {
   const [deletingCarrier, setDeletingCarrier] = useState<Carrier | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'shippingLine' | 'airline'>('all')
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [form, setForm] = useState({ code: '', name: '', type: 'shippingLine' as Carrier['type'] })
   const toast = useToast()
 
   const openNew = () => {
     setEditing(null)
     setForm({ code: '', name: '', type: 'shippingLine' })
+    setErrors({})
     setOpen(true)
   }
   const openEdit = (carrier: Carrier) => {
     setEditing(carrier)
     setForm({ code: carrier.code, name: carrier.name, type: carrier.type })
+    setErrors({})
     setOpen(true)
   }
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!form.code.trim()) errs.code = 'Code is required'
+    if (!form.name.trim()) errs.name = 'Name is required'
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
   const save = async () => {
+    if (!validate()) return
     try {
       if (editing) await carriers.update(editing.id, form)
       else await carriers.create(form)
@@ -301,8 +357,24 @@ function CarriersTab() {
       )}
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? 'Edit carrier' : 'New carrier'}>
         <div className="flex flex-col gap-4">
-          <Input label="Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-          <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input
+            label="Code"
+            error={errors.code}
+            value={form.code}
+            onChange={(e) => {
+              setForm({ ...form, code: e.target.value })
+              setErrors((prev) => ({ ...prev, code: '' }))
+            }}
+          />
+          <Input
+            label="Name"
+            error={errors.name}
+            value={form.name}
+            onChange={(e) => {
+              setForm({ ...form, name: e.target.value })
+              setErrors((prev) => ({ ...prev, name: '' }))
+            }}
+          />
           <Select
             label="Type"
             options={[{ value: 'shippingLine', label: 'Shipping line' }, { value: 'airline', label: 'Airline' }]}
@@ -339,27 +411,50 @@ function CurrenciesTab() {
   const rates = useCrud<ExchangeRate>('/api/master/exchange-rates', false)
   const [open, setOpen] = useState(false)
   const [rateOpen, setRateOpen] = useState(false)
+  const [currencyErrors, setCurrencyErrors] = useState<Record<string, string>>({})
+  const [rateErrors, setRateErrors] = useState<Record<string, string>>({})
   const [form, setForm] = useState({ code: '', name: '', decimalDigits: 2 })
   const [rateForm, setRateForm] = useState({ currencyCode: '', rateToBase: '', effectiveDate: '' })
   const toast = useToast()
 
+  const validateCurrency = () => {
+    const errs: Record<string, string> = {}
+    if (!form.code.trim()) errs.code = 'Currency code is required'
+    if (!form.name.trim()) errs.name = 'Currency name is required'
+    setCurrencyErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const validateRate = () => {
+    const errs: Record<string, string> = {}
+    if (!rateForm.currencyCode) errs.currencyCode = 'Currency is required'
+    if (!rateForm.rateToBase || Number(rateForm.rateToBase) <= 0) errs.rateToBase = 'Rate must be > 0'
+    if (!rateForm.effectiveDate) errs.effectiveDate = 'Effective date is required'
+    setRateErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
   const save = async () => {
+    if (!validateCurrency()) return
     try {
       await currencies.create(form)
       toast.show('Currency added', 'success')
       setOpen(false)
       setForm({ code: '', name: '', decimalDigits: 2 })
+      setCurrencyErrors({})
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to add currency', 'destructive')
     }
   }
 
   const saveRate = async () => {
+    if (!validateRate()) return
     try {
       await rates.create({ ...rateForm, rateToBase: Number(rateForm.rateToBase) })
       toast.show('Exchange rate added', 'success')
       setRateOpen(false)
       setRateForm({ currencyCode: '', rateToBase: '', effectiveDate: '' })
+      setRateErrors({})
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : 'Failed to add exchange rate', 'destructive')
     }
@@ -370,7 +465,15 @@ function CurrenciesTab() {
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-sm">Currencies</h3>
-          <Button onClick={() => setOpen(true)}>New currency</Button>
+          <Button
+            onClick={() => {
+              setForm({ code: '', name: '', decimalDigits: 2 })
+              setCurrencyErrors({})
+              setOpen(true)
+            }}
+          >
+            New currency
+          </Button>
         </div>
         {currencies.loading ? (
           <Skeleton height="2rem" />
@@ -391,7 +494,15 @@ function CurrenciesTab() {
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-sm">Exchange rates (history — never overwritten)</h3>
-          <Button onClick={() => setRateOpen(true)}>New rate</Button>
+          <Button
+            onClick={() => {
+              setRateForm({ currencyCode: '', rateToBase: '', effectiveDate: '' })
+              setRateErrors({})
+              setRateOpen(true)
+            }}
+          >
+            New rate
+          </Button>
         </div>
         {rates.loading ? (
           <Skeleton height="2rem" />
@@ -411,8 +522,24 @@ function CurrenciesTab() {
 
       <Dialog open={open} onClose={() => setOpen(false)} title="New currency">
         <div className="flex flex-col gap-4">
-          <Input label="Code (ISO 4217)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-          <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input
+            label="Code (ISO 4217)"
+            error={currencyErrors.code}
+            value={form.code}
+            onChange={(e) => {
+              setForm({ ...form, code: e.target.value })
+              setCurrencyErrors((prev) => ({ ...prev, code: '' }))
+            }}
+          />
+          <Input
+            label="Name"
+            error={currencyErrors.name}
+            value={form.name}
+            onChange={(e) => {
+              setForm({ ...form, name: e.target.value })
+              setCurrencyErrors((prev) => ({ ...prev, name: '' }))
+            }}
+          />
           <Input
             label="Decimal digits"
             type="number"
@@ -431,22 +558,34 @@ function CurrenciesTab() {
           <Select
             label="Currency"
             placeholder="Select currency"
+            error={rateErrors.currencyCode}
             options={currencies.items.map((c) => ({ value: c.code, label: c.code }))}
             value={rateForm.currencyCode}
-            onChange={(e) => setRateForm({ ...rateForm, currencyCode: e.target.value })}
+            onChange={(e) => {
+              setRateForm({ ...rateForm, currencyCode: e.target.value })
+              setRateErrors((prev) => ({ ...prev, currencyCode: '' }))
+            }}
           />
           <Input
             label="Rate to USD (1 unit = ? USD)"
             type="number"
             step="0.00000001"
+            error={rateErrors.rateToBase}
             value={rateForm.rateToBase}
-            onChange={(e) => setRateForm({ ...rateForm, rateToBase: e.target.value })}
+            onChange={(e) => {
+              setRateForm({ ...rateForm, rateToBase: e.target.value })
+              setRateErrors((prev) => ({ ...prev, rateToBase: '' }))
+            }}
           />
           <Input
             label="Effective date"
             type="date"
+            error={rateErrors.effectiveDate}
             value={rateForm.effectiveDate}
-            onChange={(e) => setRateForm({ ...rateForm, effectiveDate: e.target.value })}
+            onChange={(e) => {
+              setRateForm({ ...rateForm, effectiveDate: e.target.value })
+              setRateErrors((prev) => ({ ...prev, effectiveDate: '' }))
+            }}
           />
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setRateOpen(false)}>Cancel</Button>
@@ -466,21 +605,47 @@ function UsersTab() {
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [deactivatingUser, setDeactivatingUser] = useState<OpsUser | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [form, setForm] = useState({ email: '', password: '', role: 'Sale' as UserRole, isActive: true })
   const toast = useToast()
 
   const openNew = () => {
     setEditing(null)
     setForm({ email: '', password: '', role: 'Sale', isActive: true })
+    setErrors({})
     setOpen(true)
   }
   const openEdit = (user: OpsUser) => {
     setEditing(user)
     setForm({ email: user.email, password: '', role: user.role, isActive: user.isActive })
+    setErrors({})
     setOpen(true)
   }
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!editing) {
+      if (!form.email.trim()) {
+        errs.email = 'Email is required'
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+        errs.email = 'Valid email is required'
+      }
+      if (!form.password) {
+        errs.password = 'Password is required'
+      } else if (form.password.length < 6) {
+        errs.password = 'Password must be at least 6 characters'
+      }
+    } else {
+      if (form.password && form.password.length < 6) {
+        errs.password = 'Password must be at least 6 characters'
+      }
+    }
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
   const save = async () => {
+    if (!validate()) return
     try {
       if (editing) {
         await users.update(editing.id, { role: form.role, isActive: form.isActive, password: form.password || undefined })
@@ -586,12 +751,27 @@ function UsersTab() {
       )}
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? 'Edit user' : 'New user'}>
         <div className="flex flex-col gap-4">
-          {!editing && <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}
+          {!editing && (
+            <Input
+              label="Email"
+              type="email"
+              error={errors.email}
+              value={form.email}
+              onChange={(e) => {
+                setForm({ ...form, email: e.target.value })
+                setErrors((prev) => ({ ...prev, email: '' }))
+              }}
+            />
+          )}
           <Input
             label={editing ? 'New password (leave blank to keep current)' : 'Password'}
             type="password"
+            error={errors.password}
             value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, password: e.target.value })
+              setErrors((prev) => ({ ...prev, password: '' }))
+            }}
           />
           <Select
             label="Role"
