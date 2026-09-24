@@ -263,7 +263,7 @@
   font-weight: 600;
   cursor: pointer;
 }
-.segmented button[aria-pressed="true"] {
+.segmented button[aria-checked="true"] {
   background: var(--segmented-active-bg);
   color: var(--segmented-active-fg);
 }

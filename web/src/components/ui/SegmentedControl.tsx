@@ -35,7 +35,6 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
           type="button"
           role="radio"
           aria-checked={option.value === value}
-          aria-pressed={option.value === value}
           tabIndex={option.value === value ? 0 : -1}
           onClick={() => onChange(option.value)}
         >

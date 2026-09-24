@@ -24,27 +24,32 @@ export function Table<T>({ columns, rows, rowKey, emptyTitle, emptyDescription }
   }
 
   return (
-    <table className="freight-table">
-      <thead>
-        <tr>
-          {columns.map((column) => (
-            <th key={column.key} className={column.align === 'right' ? 'num' : undefined} scope="col">
-              {column.header}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={rowKey(row)}>
+    // A dense data table (route/mode/carrier/price/validity/status/actions) doesn't fit
+    // 375px width — scope the horizontal scroll to the table itself instead of letting it
+    // force the whole page wider (found during T15's responsive pass).
+    <div className="overflow-x-auto">
+      <table className="freight-table">
+        <thead>
+          <tr>
             {columns.map((column) => (
-              <td key={column.key} className={column.align === 'right' ? 'num' : undefined}>
-                {column.render(row)}
-              </td>
+              <th key={column.key} className={column.align === 'right' ? 'num' : undefined} scope="col">
+                {column.header || <span className="sr-only">Actions</span>}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={rowKey(row)}>
+              {columns.map((column) => (
+                <td key={column.key} className={column.align === 'right' ? 'num' : undefined}>
+                  {column.render(row)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
