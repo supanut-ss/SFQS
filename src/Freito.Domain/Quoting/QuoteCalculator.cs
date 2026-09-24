@@ -89,6 +89,7 @@ public static class QuoteCalculator
         {
             RateFound = true,
             RateSource = resolution.Source,
+            FreightCurrency = resolution.Rate!.CurrencyCode,
             FreightCost = freightCost,
             LocalChargeTotal = localTotal,
             Subtotal = freightCost + localTotal,

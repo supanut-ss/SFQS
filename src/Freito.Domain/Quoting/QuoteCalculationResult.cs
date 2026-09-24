@@ -11,6 +11,10 @@ public class QuoteCalculationResult
 {
     public bool RateFound { get; init; }
     public RateSource RateSource { get; init; }
+
+    /// <summary>Currency FreightCost is denominated in — the resolved FreightRate's own
+    /// currency. Null when no rate was found (FreightCost is 0 and Sale must price manually).</summary>
+    public string? FreightCurrency { get; init; }
     public decimal FreightCost { get; init; }
     public decimal LocalChargeTotal { get; init; }
     public decimal Subtotal { get; init; }

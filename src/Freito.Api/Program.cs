@@ -15,6 +15,7 @@ builder.Services.AddScoped<Freito.Api.Services.FreightRateService>();
 builder.Services.AddScoped<Freito.Api.Services.LocalChargeService>();
 builder.Services.AddScoped<Freito.Api.Services.FreightRateCsvImporter>();
 builder.Services.AddScoped<Freito.Api.Services.LocalChargeCsvImporter>();
+builder.Services.AddScoped<Freito.Api.Services.QuotationService>();
 
 // Connection string comes from appsettings / environment / Plesk app settings —
 // never hardcoded. See appsettings.json for the expected key.
