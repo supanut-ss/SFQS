@@ -1,16 +1,21 @@
 import { useState } from 'react'
 import { Badge, Button, Dialog, EmptyState, Input, Select, SegmentedControl, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError } from '../../lib/api'
+import { useRouter } from '../../lib/useRouter'
 import type { Carrier, Currency, ExchangeRate, OpsUser, Port, UserRole } from './types'
 import { useCrud } from './useCrud'
 
 type Tab = 'ports' | 'carriers' | 'currencies' | 'users'
 
-/** ui-plan.md IA page 7 (Admin only — every mutation here requires the Admin role server-side,
- * MasterDataController). Four tabs instead of four separate pages since there's no router yet
- * and each resource's CRUD is small (2-5 fields). */
+/** ui-plan.md IA page 7 with router query-param tab persistence. */
 export function MasterDataPage() {
-  const [tab, setTab] = useState<Tab>('ports')
+  const { searchParams, navigate } = useRouter()
+  const tabParam = searchParams.get('tab') as Tab | null
+  const tab: Tab = tabParam && ['ports', 'carriers', 'currencies', 'users'].includes(tabParam) ? tabParam : 'ports'
+
+  const handleTabChange = (nextTab: Tab) => {
+    navigate(`/ops/master-data?tab=${nextTab}`)
+  }
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-4xl">
@@ -18,7 +23,7 @@ export function MasterDataPage() {
       <SegmentedControl
         label="Master data section"
         value={tab}
-        onChange={setTab}
+        onChange={handleTabChange}
         options={[
           { value: 'ports', label: 'Ports' },
           { value: 'carriers', label: 'Carriers' },

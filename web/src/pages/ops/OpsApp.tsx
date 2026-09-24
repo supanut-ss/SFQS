@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { Badge, Button, Skeleton } from '../../components/ui'
 import { useAuth } from '../../lib/useAuth'
+import { useRouter } from '../../lib/useRouter'
 import { QuotationsPage } from '../sale/QuotationsPage'
 import { LoginPage } from './LoginPage'
 import { RateManagementPage } from './RateManagementPage'
@@ -9,12 +10,35 @@ import { MasterDataPage } from './MasterDataPage'
 
 type OpsTab = 'quotations' | 'rates' | 'local-charges' | 'master-data'
 
-/** Internal (Sale/Operation/Admin) area — ui-plan.md IA pages 3-8. No router yet, so this is
- * its own small tab switcher gated by the logged-in user's role, same pattern as
- * InstantQuotePage's linear flow (T13). */
+/** Internal (Sale/Operation/Admin) area — ui-plan.md IA pages 3-8 with full URL routing support. */
 export function OpsApp() {
   const { user, loading, logout } = useAuth()
-  const [tab, setTab] = useState<OpsTab>('quotations')
+  const { path, navigate } = useRouter()
+
+  const canSeeSale = user?.role === 'Sale' || user?.role === 'Admin'
+  const canSeeOperation = user?.role === 'Operation' || user?.role === 'Admin'
+  const canSeeAdmin = user?.role === 'Admin'
+
+  const availableTabs = ([
+    canSeeSale && 'quotations',
+    canSeeOperation && 'rates',
+    canSeeOperation && 'local-charges',
+    canSeeAdmin && 'master-data',
+  ] as const).filter((t): t is OpsTab => t !== false)
+
+  let tabFromRoute: OpsTab = 'quotations'
+  if (path.startsWith('/ops/rates')) tabFromRoute = 'rates'
+  else if (path.startsWith('/ops/local-charges')) tabFromRoute = 'local-charges'
+  else if (path.startsWith('/ops/master-data')) tabFromRoute = 'master-data'
+  else if (path.startsWith('/ops/quotations') || path === '/ops') tabFromRoute = 'quotations'
+
+  const activeTab = availableTabs.includes(tabFromRoute) ? tabFromRoute : availableTabs[0]
+
+  useEffect(() => {
+    if (user && activeTab && (path === '/ops' || !availableTabs.includes(tabFromRoute))) {
+      navigate(`/ops/${activeTab}`)
+    }
+  }, [user, path, tabFromRoute, activeTab, availableTabs, navigate])
 
   if (loading) {
     return (
@@ -29,20 +53,6 @@ export function OpsApp() {
     return <LoginPage />
   }
 
-  const canSeeSale = user.role === 'Sale' || user.role === 'Admin'
-  const canSeeOperation = user.role === 'Operation' || user.role === 'Admin'
-  const canSeeAdmin = user.role === 'Admin'
-
-  // A plain Operation account has no access to "quotations" (the default tab), which only
-  // matters the first time they land here — fall back to the first tab their role can see.
-  const availableTabs = ([
-    canSeeSale && 'quotations',
-    canSeeOperation && 'rates',
-    canSeeOperation && 'local-charges',
-    canSeeAdmin && 'master-data',
-  ] as const).filter((t): t is OpsTab => t !== false)
-  const activeTab = availableTabs.includes(tab) ? tab : availableTabs[0]
-
   return (
     <div className="flex flex-col gap-4 w-full items-center">
       <div className="w-full max-w-4xl flex items-center justify-between">
@@ -56,14 +66,14 @@ export function OpsApp() {
       </div>
 
       <nav className="w-full max-w-4xl flex gap-2 border-b border-border pb-2">
-        {canSeeSale && <TabLink active={activeTab === 'quotations'} onClick={() => setTab('quotations')} label="Quotations" />}
+        {canSeeSale && <TabLink active={activeTab === 'quotations'} onClick={() => navigate('/ops/quotations')} label="Quotations" />}
         {canSeeOperation && (
           <>
-            <TabLink active={activeTab === 'rates'} onClick={() => setTab('rates')} label="Rates" />
-            <TabLink active={activeTab === 'local-charges'} onClick={() => setTab('local-charges')} label="Local charges" />
+            <TabLink active={activeTab === 'rates'} onClick={() => navigate('/ops/rates')} label="Rates" />
+            <TabLink active={activeTab === 'local-charges'} onClick={() => navigate('/ops/local-charges')} label="Local charges" />
           </>
         )}
-        {canSeeAdmin && <TabLink active={activeTab === 'master-data'} onClick={() => setTab('master-data')} label="Master data" />}
+        {canSeeAdmin && <TabLink active={activeTab === 'master-data'} onClick={() => navigate('/ops/master-data')} label="Master data" />}
       </nav>
 
       {activeTab === 'quotations' && canSeeSale && <QuotationsPage />}

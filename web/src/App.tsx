@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
 import { InstantQuotePage } from './pages/quote/InstantQuotePage'
 import { OpsApp } from './pages/ops/OpsApp'
+import { useRouter } from './lib/useRouter'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
-type View = 'quote' | 'ops'
 
 /**
  * T13/T12: the public Instant Quote page and the internal ops area (Rate/Local charge/Master
- * data management, gated by login) are the two real app surfaces so far (ui-plan.md IA). No
- * router yet — switched via a small link at the bottom.
+ * data management, gated by login) are navigated via client hash router with deep link support.
  */
 function App() {
   const [health, setHealth] = useState<HealthStatus>('checking')
-  const [view, setView] = useState<View>('quote')
+  const { path, navigate } = useRouter()
+  const isOps = path.startsWith('/ops')
 
   useEffect(() => {
     let cancelled = false
@@ -49,15 +49,23 @@ function App() {
       </p>
 
       <div className="w-full flex justify-center mt-4">
-        {view === 'quote' && <InstantQuotePage />}
-        {view === 'ops' && <OpsApp />}
+        {!isOps && <InstantQuotePage />}
+        {isOps && <OpsApp />}
       </div>
 
       <div className="flex gap-4 mt-8">
-        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setView('quote')}>
+        <button
+          type="button"
+          className={`text-xs underline ${!isOps ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+          onClick={() => navigate('/quote')}
+        >
           Instant Quote
         </button>
-        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setView('ops')}>
+        <button
+          type="button"
+          className={`text-xs underline ${isOps ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+          onClick={() => navigate('/ops')}
+        >
           Operation / Admin sign in
         </button>
       </div>

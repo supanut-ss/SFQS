@@ -1,15 +1,15 @@
-import { useState } from 'react'
+import { useRouter } from '../../lib/useRouter'
 import { QuotationDetailPage } from './QuotationDetailPage'
 import { QuotationInboxPage } from './QuotationInboxPage'
 
-/** Orchestrates ui-plan.md IA pages 3-4 as one linear flow (no router yet), same pattern as
- * InstantQuotePage (T13) and OpsApp (T12). */
+/** Orchestrates ui-plan.md IA pages 3-4 with URL routing and deep links. */
 export function QuotationsPage() {
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const { params, navigate } = useRouter()
+  const selectedId = params.id ? Number(params.id) : null
 
   return selectedId === null ? (
-    <QuotationInboxPage onSelect={setSelectedId} />
+    <QuotationInboxPage onSelect={(id) => navigate(`/ops/quotations/${id}`)} />
   ) : (
-    <QuotationDetailPage id={selectedId} onBack={() => setSelectedId(null)} />
+    <QuotationDetailPage id={selectedId} onBack={() => navigate('/ops/quotations')} />
   )
 }
