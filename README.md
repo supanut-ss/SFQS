@@ -21,6 +21,21 @@ B2B freight quotation platform (FCL / LCL / Air) — instant draft pricing with 
 - [tokens.css](tokens.css) — generated CSS custom properties (`npm run tokens:build`)
 - [style-guide.html](style-guide.html) — browsable style guide with a light/dark toggle
 
+## Backend dev setup
+
+Requires .NET 10 SDK. Dev MySQL runs via Docker (matches `appsettings.Development.json`):
+
+```bash
+docker compose up -d                          # starts MySQL on localhost:3306 (freito_dev)
+cd src/Freito.Api
+dotnet ef database update --project ../Freito.Infrastructure --startup-project .
+dotnet run
+```
+
+```bash
+dotnet build && dotnet test   # from src/Freito.Tests or any project folder
+```
+
 ## Checks
 
 ```bash

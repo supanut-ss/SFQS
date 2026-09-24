@@ -133,9 +133,9 @@ Design token ครบทุกหน้า, responsive + a11y, backup/monitorin
 
 ## 6. M0 — สิ่งที่ทำจริงแล้ว (ตรวจแล้ว)
 
-**Backend** (`src/`, .NET 8 — SDK ใหม่สุดที่มีคือ .NET 10 แต่เลือก 8 เพราะเป็น LTS และมีโอกาสสูงสุดที่ Plesk hosting bundle จะรองรับ — **ต้องยืนยันกับ Plesk จริงใน T0**):
+**Backend** (`src/`, .NET 10 — ใช้เวอร์ชันตรงกับที่มีอยู่บนเครื่อง dev จริง (SDK 10.0.401 เป็น LTS ล่าสุด) แทนการสมมติ .NET 8 — Plesk hosting bundle ต้องยืนยันแยกใน T0 ส่วน deploy):
 - Solution `Freito.slnx` + 4 โปรเจกต์ตามผังใน §1 (`Freito.Api/Domain/Infrastructure/Tests`) พร้อม project reference ครบ
-- EF Core 8 + Pomelo MySQL provider ผูกกับ `FreitoDbContext` (มี entity เดียวคือ `Incoterm` เป็น proof-of-pipeline — schema เต็มเป็นงาน M1)
+- EF Core 9 + Pomelo MySQL provider ผูกกับ `FreitoDbContext` (Pomelo ยังไม่มีเวอร์ชันที่ build กับ EF Core 10 โดยตรง — ใช้ EF Core 9 บน TFM net10.0 ได้ปกติเพราะ .NET การันตี backward compat)
 - ตั้งใจใช้ **pinned `MySqlServerVersion`** แทน `ServerVersion.AutoDetect` เพราะ AutoDetect เชื่อมต่อ DB แบบ synchronous ตอน startup — ถ้า Plesk MySQL หลุดชั่วคราวตอนบูตแอปจะ crash-loop ทั้งแอป ปักหมุดเวอร์ชันแทนเพื่อให้แอปเริ่มได้แม้ DB ยังต่อไม่ได้
 - `GET /api/health` (liveness, ไม่ต้องมี DB) และ `GET /api/health/db` (readiness, คืน 503 ถ้าต่อ DB ไม่ได้ — ไม่ throw) — **ทดสอบจริงแล้ว**: รันแอปโดยไม่มี MySQL อยู่เลย ยัง boot ได้ `/api/health` ตอบ 200, `/api/health/db` ตอบ 503 ตามที่ออกแบบ
 - Unit test 2 เคสผ่าน EF Core InMemory provider — `dotnet test` **ผ่านจริง 2/2**
@@ -148,9 +148,11 @@ Design token ครบทุกหน้า, responsive + a11y, backup/monitorin
 
 **Single-domain serving** — ตรวจจริงโดยรัน `dotnet run` แล้ว build React ใส่ `wwwroot` เอง (ก่อนที่ publish target จะทำอัตโนมัติ): `GET http://localhost:5025/` คืน 200 (SPA), `GET http://localhost:5025/api/health` คืน 200 (API) จาก origin เดียวกัน — ตรงกับสถาปัตยกรรมใน §1 เป๊ะ
 
+**Dev DB** — MySQL รันผ่าน Docker (`docker-compose.yml` ที่ root, image `mysql:8.4`, ดู [README.md](README.md)) แทนการรอ Plesk: `docker compose up -d` แล้ว `dotnet ef database update` ใช้ได้จริงแล้ว — migration `20260923092606_InitialDataFoundation` apply สำเร็จ, ตรวจแล้วว่าได้ตาราง 14 ตัวครบตาม schema
+
 **ยังไม่ได้ทำ / บล็อกอยู่ที่ผู้ใช้**:
-- ยืนยันเวอร์ชัน .NET ที่ Plesk รองรับจริง (ผมสมมติ .NET 8 LTS ไว้ก่อน — ถ้า Plesk รองรับแค่เก่ากว่านี้ต้อง downgrade)
-- สร้าง MySQL database บน Plesk host + connection string จริง
+- ยืนยันเวอร์ชัน .NET ที่ Plesk hosting bundle รองรับจริง (dev ใช้ .NET 10 แล้ว แต่ Plesk อาจรองรับแค่บางเวอร์ชัน ต้องเช็คแยก)
+- สร้าง MySQL database บน Plesk host จริง + connection string จริง (dev ใช้ docker แทนไปก่อน)
 - Deploy ขึ้น Plesk จริงเพื่อปิด exit criteria ของ M0
 - คุยสูตรกับทีม Operation (T1 ในตาราง work-plan.md)
 
