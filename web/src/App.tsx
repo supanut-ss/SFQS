@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react'
-import { ComponentGallery } from './ComponentGallery'
 import { InstantQuotePage } from './pages/quote/InstantQuotePage'
 import { OpsApp } from './pages/ops/OpsApp'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
-type View = 'quote' | 'ops' | 'gallery'
+type View = 'quote' | 'ops'
 
 /**
  * T13/T12: the public Instant Quote page and the internal ops area (Rate/Local charge/Master
  * data management, gated by login) are the two real app surfaces so far (ui-plan.md IA). No
- * router yet — switched via a small link at the bottom, same pattern as the T11 gallery link.
+ * router yet — switched via a small link at the bottom.
  */
 function App() {
   const [health, setHealth] = useState<HealthStatus>('checking')
@@ -52,7 +51,6 @@ function App() {
       <div className="w-full flex justify-center mt-4">
         {view === 'quote' && <InstantQuotePage />}
         {view === 'ops' && <OpsApp />}
-        {view === 'gallery' && <ComponentGallery />}
       </div>
 
       <div className="flex gap-4 mt-8">
@@ -61,9 +59,6 @@ function App() {
         </button>
         <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setView('ops')}>
           Operation / Admin sign in
-        </button>
-        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setView('gallery')}>
-          Component gallery (dev reference)
         </button>
       </div>
     </main>
