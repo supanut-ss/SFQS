@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Box from '@mui/material/Box'
 import { EmptyState, Select, Skeleton, Table } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { formatMoney } from '../../lib/format'
@@ -56,16 +57,18 @@ export function QuotationInboxPage({ onSelect }: QuotationInboxPageProps) {
   }, [status])
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-4xl">
-      <div className="flex items-center justify-between">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: 1024 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr auto' }, gap: 2, alignItems: 'center' }}>
         <h2 className="font-heading text-lg font-semibold">Quotation inbox</h2>
-        <Select
-          label="Status"
-          options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-          value={status}
-          onChange={(e) => setStatus(e.target.value as QuotationStatus | '')}
-        />
-      </div>
+        <Box sx={{ minWidth: 220 }}>
+          <Select
+            label="Status"
+            options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            value={status}
+            onChange={(e) => setStatus(e.target.value as QuotationStatus | '')}
+          />
+        </Box>
+      </Box>
 
       {loading ? (
         <div className="flex flex-col gap-2">
@@ -100,6 +103,6 @@ export function QuotationInboxPage({ onSelect }: QuotationInboxPageProps) {
           emptyDescription="Nothing matches this status filter right now."
         />
       )}
-    </div>
+    </Box>
   )
 }

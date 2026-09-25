@@ -1,3 +1,4 @@
+import Box from '@mui/material/Box'
 import { Input, Select } from '../../components/ui'
 import type { TransportMode } from './types'
 
@@ -24,7 +25,7 @@ export interface ModeSpecificFieldsProps {
 export function ModeSpecificFields({ mode, values, onChange }: ModeSpecificFieldsProps) {
   if (mode === 'fcl') {
     return (
-      <div className="form-row">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
         <Select
           label="Container size"
           required
@@ -41,13 +42,13 @@ export function ModeSpecificFields({ mode, values, onChange }: ModeSpecificField
           value={values.containerQty ?? 1}
           onChange={(e) => onChange({ ...values, containerQty: Number(e.target.value) })}
         />
-      </div>
+      </Box>
     )
   }
 
   if (mode === 'lcl') {
     return (
-      <div className="form-row">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
         <Input
           label="CBM"
           type="number"
@@ -66,12 +67,12 @@ export function ModeSpecificFields({ mode, values, onChange }: ModeSpecificField
           value={values.weightKg ?? ''}
           onChange={(e) => onChange({ ...values, weightKg: Number(e.target.value) })}
         />
-      </div>
+      </Box>
     )
   }
 
   return (
-    <div className="form-row">
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
       <Input
         label="Actual weight (kg)"
         type="number"
@@ -91,6 +92,6 @@ export function ModeSpecificFields({ mode, values, onChange }: ModeSpecificField
         value={values.volumeCm3 ?? ''}
         onChange={(e) => onChange({ ...values, volumeCm3: Number(e.target.value) })}
       />
-    </div>
+    </Box>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Box from '@mui/material/Box'
 import { Button, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { formatMoney } from '../../lib/format'
@@ -423,7 +424,7 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
           </div>
 
           {!isEditingParameters ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2, fontSize: '0.75rem' }}>
               <div>
                 <p className="text-muted-foreground text-[10px] uppercase font-semibold">Customer</p>
                 <p className="text-sm font-medium mt-0.5">
@@ -446,13 +447,13 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                   {mode === 'air' && `Weight: ${weightKg || '-'} kg, Volume: ${cbm || '-'} CBM`}
                 </p>
               </div>
-            </div>
+            </Box>
           ) : (
             <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
               <p className="text-xs text-muted-foreground">
                 Edit the parameters submitted by the customer. Saving will update the quotation record and PDF.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5, fontSize: '0.75rem' }}>
                 <Input
                   label="Customer Name"
                   value={customerName}
@@ -475,9 +476,9 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                 />
-              </div>
+              </Box>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: 1.5, fontSize: '0.75rem' }}>
                 <Select
                   label="Mode"
                   value={mode}
@@ -509,9 +510,9 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                   value={readyDate}
                   onChange={(e) => setReadyDate(e.target.value)}
                 />
-              </div>
+              </Box>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5, fontSize: '0.75rem' }}>
                 <Select
                   label="Origin Port / Airport"
                   value={originPortId.toString()}
@@ -530,10 +531,10 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                     label: `${p.name} (${p.code}) - ${p.country}`,
                   }))}
                 />
-              </div>
+              </Box>
 
               {mode === 'fcl' && (
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5, fontSize: '0.75rem' }}>
                   <Select
                     label="Container Size"
                     value={containerSize}
@@ -551,11 +552,11 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                     value={qty.toString()}
                     onChange={(e) => setQty(Number(e.target.value) || 1)}
                   />
-                </div>
+                </Box>
               )}
 
               {(mode === 'lcl' || mode === 'air') && (
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5, fontSize: '0.75rem' }}>
                   <Input
                     label="Volume (CBM)"
                     type="number"
@@ -570,7 +571,7 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                     value={weightKg}
                     onChange={(e) => setWeightKg(e.target.value)}
                   />
-                </div>
+                </Box>
               )}
             </div>
           )}
@@ -766,14 +767,14 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                 placeholder="Reason for a price change, or why this quotation is rejected"
               />
             </div>
-            <div className="approval-actions">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5, mt: 1 }}>
               <Button variant="outline-destructive" onClick={handleReject} disabled={busy}>
                 Reject
               </Button>
               <Button variant="success" onClick={handleApprove} disabled={busy}>
                 Approve quotation
               </Button>
-            </div>
+            </Box>
           </>
         )}
 

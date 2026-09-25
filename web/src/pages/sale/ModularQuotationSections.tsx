@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Box from '@mui/material/Box'
 import { Button, Input } from '../../components/ui'
 import type { QuotationDimensionItem } from './types'
 
@@ -234,7 +235,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
           </div>
 
           {editable ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5, fontSize: '0.75rem' }}>
               <Input
                 label="Carrier / Airline"
                 placeholder="e.g. MSC / Hapag, Cargolux, Oceanblu"
@@ -259,9 +260,9 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                 value={data.closingSchedule}
                 onChange={(e) => onChange({ closingSchedule: e.target.value })}
               />
-            </div>
+            </Box>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: 1.5, fontSize: '0.75rem' }}>
               {data.carrierInfo && (
                 <div>
                   <p className="text-muted-foreground text-[10px]">Carrier</p>
@@ -286,7 +287,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                   <p className="font-medium">{data.closingSchedule}</p>
                 </div>
               )}
-            </div>
+            </Box>
           )}
         </div>
       )}
@@ -441,7 +442,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
 
       {/* SECTION 3 & 4: Commercial & Insurance (Side-by-side or combined) */}
       {(data.showPayment || data.showInsurance || (!editable && (data.paymentTerms || data.insuranceStatus))) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
           {(data.showPayment || (!editable && data.paymentTerms)) && (
             <div className="border border-border/80 rounded-md p-3 bg-muted/15 flex flex-col gap-2">
               <div className="flex items-center justify-between">
@@ -529,7 +530,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
               )}
             </div>
           )}
-        </div>
+        </Box>
       )}
 
       {/* SECTION 5: Terms & Conditions / Disclaimer */}

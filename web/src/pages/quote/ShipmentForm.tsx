@@ -1,3 +1,4 @@
+import Box from '@mui/material/Box'
 import { Button, SegmentedControl, Select } from '../../components/ui'
 import { Input } from '../../components/ui'
 import { ModeSpecificFields, type ModeFieldValues } from './ModeSpecificFields'
@@ -45,8 +46,10 @@ export function ShipmentForm({
   const handleModeFieldsChange = (fields: ModeFieldValues) => onChange({ ...value, ...fields })
 
   return (
-    <form
+    <Box
+      component="form"
       className="quote-form"
+      sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit()
@@ -63,7 +66,7 @@ export function ShipmentForm({
         ]}
       />
 
-      <div className="form-row">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
         <Select
           label="Origin"
           required
@@ -80,9 +83,9 @@ export function ShipmentForm({
           value={value.destinationPortId ? String(value.destinationPortId) : ''}
           onChange={(e) => onChange({ ...value, destinationPortId: Number(e.target.value) })}
         />
-      </div>
+      </Box>
 
-      <div className="form-row">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
         <Select
           label="Direction"
           required
@@ -101,11 +104,11 @@ export function ShipmentForm({
           value={value.incotermCode}
           onChange={(e) => onChange({ ...value, incotermCode: e.target.value })}
         />
-      </div>
+      </Box>
 
       <ModeSpecificFields mode={value.mode} values={value} onChange={handleModeFieldsChange} />
 
-      <div className="form-row">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
         <Input
           label="Ready date"
           type="date"
@@ -113,11 +116,11 @@ export function ShipmentForm({
           value={value.readyDate}
           onChange={(e) => onChange({ ...value, readyDate: e.target.value })}
         />
-      </div>
+      </Box>
 
       <Button type="submit" style={{ width: '100%' }} disabled={submitting}>
         {submitting ? 'Calculating…' : submitLabel}
       </Button>
-    </form>
+    </Box>
   )
 }

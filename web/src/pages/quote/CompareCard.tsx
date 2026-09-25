@@ -1,3 +1,4 @@
+import Box from '@mui/material/Box'
 import { formatMoney } from '../../lib/format'
 import type { QuoteCalculationResult } from './types'
 
@@ -43,9 +44,9 @@ export function CompareSection({ fcl, lcl }: CompareSectionProps) {
   const lclWins = lcl.rateFound && (!fcl.rateFound || lcl.subtotal < fcl.subtotal)
 
   return (
-    <div className="compare-row">
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2, width: '100%', maxWidth: 640 }}>
       <CompareCard label="FCL" result={fcl} recommended={fclWins} />
       <CompareCard label="LCL" result={lcl} recommended={lclWins} />
-    </div>
+    </Box>
   )
 }

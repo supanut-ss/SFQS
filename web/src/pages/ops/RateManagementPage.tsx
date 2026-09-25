@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Box from '@mui/material/Box'
 import { Badge, Button, ConfirmDialog, EmptyState, Input, Select, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { RateFormDialog, type RateFormValues } from './RateFormDialog'
@@ -137,10 +138,10 @@ export function RateManagementPage() {
   const hasFilterActive = Boolean(search || modeFilter !== 'all' || directionFilter !== 'all' || statusFilter !== 'active')
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-4xl">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: 1024 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
         <h2 className="font-heading text-lg font-semibold">Rate management</h2>
-        <div className="flex items-center gap-3">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
           <input
             ref={fileInputRef}
             type="file"
@@ -162,11 +163,11 @@ export function RateManagementPage() {
           >
             New rate
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="card-sample flex flex-col gap-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      <Box className="card-sample" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' }, gap: 2 }}>
           <Input
             label="Search"
             placeholder="Port, carrier, size..."
@@ -204,7 +205,7 @@ export function RateManagementPage() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'active' | 'inactive' | 'all')}
           />
-        </div>
+        </Box>
         <div className="flex justify-between items-center text-xs text-muted-foreground">
           <span>
             Showing {visibleRates.length} of {rates.items.length} rates
@@ -224,7 +225,7 @@ export function RateManagementPage() {
             </button>
           )}
         </div>
-      </div>
+      </Box>
 
       {importResult && importResult.errors.length > 0 && (
         <div className="card-sample" style={{ width: 'auto' }}>
@@ -324,6 +325,6 @@ export function RateManagementPage() {
         }
         confirmLabel="Deactivate"
       />
-    </div>
+    </Box>
   )
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Box from '@mui/material/Box'
 import { Button, Input, Select } from '../../components/ui'
 import type { CargoType } from './types'
 
@@ -30,14 +31,16 @@ export function CustomerDetailsForm({ cargoTypes, onSubmit, submitting }: Custom
   const [details, setDetails] = useState<CustomerDetails>(initial)
 
   return (
-    <form
+    <Box
+      component="form"
       className="quote-form"
+      sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit(details)
       }}
     >
-      <div className="form-row">
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
         <Input
           label="Your name"
           required
@@ -49,8 +52,8 @@ export function CustomerDetailsForm({ cargoTypes, onSubmit, submitting }: Custom
           value={details.customerCompany}
           onChange={(e) => setDetails({ ...details, customerCompany: e.target.value })}
         />
-      </div>
-      <div className="form-row">
+      </Box>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
         <Input
           label="Email"
           type="email"
@@ -65,8 +68,8 @@ export function CustomerDetailsForm({ cargoTypes, onSubmit, submitting }: Custom
           value={details.customerPhone}
           onChange={(e) => setDetails({ ...details, customerPhone: e.target.value })}
         />
-      </div>
-      <div className="form-row">
+      </Box>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
         <Select
           label="Cargo type"
           required
@@ -75,10 +78,10 @@ export function CustomerDetailsForm({ cargoTypes, onSubmit, submitting }: Custom
           value={details.cargoTypeId ? String(details.cargoTypeId) : ''}
           onChange={(e) => setDetails({ ...details, cargoTypeId: Number(e.target.value) })}
         />
-      </div>
+      </Box>
       <Button type="submit" style={{ width: '100%' }} disabled={submitting}>
         {submitting ? 'Submitting…' : 'Request this quote'}
       </Button>
-    </form>
+    </Box>
   )
 }

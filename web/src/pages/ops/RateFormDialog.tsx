@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Box from '@mui/material/Box'
 import { Button, Dialog, Input, Select } from '../../components/ui'
 import type { Carrier, Currency, FreightRate, Port, ShipmentDirection, TransportMode } from './types'
 
@@ -156,8 +157,8 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
 
   return (
     <Dialog open={open} onClose={onClose} title={editing ? 'Revise rate' : 'New rate'}>
-      <div className="flex flex-col gap-4">
-        <div className="form-row">
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
           <Select
             label="Mode"
             options={[
@@ -180,8 +181,8 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
             value={values.direction}
             onChange={(e) => setValues({ ...values, direction: e.target.value as ShipmentDirection })}
           />
-        </div>
-        <div className="form-row">
+        </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
           <Select
             label="Origin"
             placeholder="Select origin"
@@ -204,7 +205,7 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
               clearError('destinationPortId')
             }}
           />
-        </div>
+        </Box>
         <Select
           label="Carrier"
           placeholder="Select carrier"
@@ -231,7 +232,7 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
           />
         )}
         {values.mode === 'air' && (
-          <div className="form-row">
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
             <Input
               label="Weight break min (kg)"
               type="number"
@@ -252,10 +253,10 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
                 clearError('weightBreakMax')
               }}
             />
-          </div>
+          </Box>
         )}
 
-        <div className="form-row">
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
           <Input
             label="Price min"
             type="number"
@@ -278,7 +279,7 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
               clearError('priceMax')
             }}
           />
-        </div>
+        </Box>
         <Select
           label="Currency"
           placeholder="Select currency"
@@ -290,7 +291,7 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
             clearError('currencyCode')
           }}
         />
-        <div className="form-row">
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
           <Input
             label="Valid from"
             type="date"
@@ -311,7 +312,7 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
               clearError('validTo')
             }}
           />
-        </div>
+        </Box>
 
         <div className="flex justify-end gap-3 mt-2">
           <Button variant="outline" onClick={onClose}>
@@ -321,7 +322,7 @@ export function RateFormDialog({ open, onClose, onSubmit, ports, carriers, curre
             {submitting ? 'Saving…' : 'Save'}
           </Button>
         </div>
-      </div>
+      </Box>
     </Dialog>
   )
 }

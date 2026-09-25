@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import Box from '@mui/material/Box'
 import { Badge, Button, Skeleton } from '../../components/ui'
 import { useAuth } from '../../lib/useAuth'
 import { useRouter } from '../../lib/useRouter'
@@ -54,18 +55,18 @@ export function OpsApp() {
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full items-center">
-      <div className="w-full max-w-4xl flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', alignItems: 'center' }}>
+      <Box sx={{ width: '100%', maxWidth: 1024, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontSize: '0.875rem' }}>
           <span>{user.email}</span>
           <Badge variant="info">{user.role}</Badge>
-        </div>
+        </Box>
         <Button variant="outline" onClick={logout}>
           Sign out
         </Button>
-      </div>
+      </Box>
 
-      <nav className="w-full max-w-4xl flex gap-2 border-b border-border pb-2">
+      <Box component="nav" sx={{ width: '100%', maxWidth: 1024, display: 'flex', gap: 1, borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
         {canSeeSale && <TabLink active={activeTab === 'quotations'} onClick={() => navigate('/ops/quotations')} label="Quotations" />}
         {canSeeOperation && (
           <>
@@ -74,13 +75,13 @@ export function OpsApp() {
           </>
         )}
         {canSeeAdmin && <TabLink active={activeTab === 'master-data'} onClick={() => navigate('/ops/master-data')} label="Master data" />}
-      </nav>
+      </Box>
 
       {activeTab === 'quotations' && canSeeSale && <QuotationsPage />}
       {activeTab === 'rates' && canSeeOperation && <RateManagementPage />}
       {activeTab === 'local-charges' && canSeeOperation && <LocalChargeManagementPage />}
       {activeTab === 'master-data' && canSeeAdmin && <MasterDataPage />}
-    </div>
+    </Box>
   )
 }
 

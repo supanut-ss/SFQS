@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Box from '@mui/material/Box'
 import { Button, Skeleton } from '../../components/ui'
 import { useToast } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
@@ -117,7 +118,7 @@ export function InstantQuotePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 items-center">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center', width: '100%' }}>
       {(step === 'form' || step === 'result' || step === 'contact') && (
         <ShipmentForm
           value={shipment}
@@ -131,7 +132,7 @@ export function InstantQuotePage() {
       )}
 
       {result && (step === 'result' || step === 'contact') && (
-        <div className="quote-form flex flex-col gap-4">
+        <Box className="quote-form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <QuoteResultCard result={result} />
           {compareResult && <CompareSection fcl={compareResult} lcl={result} />}
           {step === 'result' && (
@@ -139,7 +140,7 @@ export function InstantQuotePage() {
               Request this quote
             </Button>
           )}
-        </div>
+        </Box>
       )}
 
       {step === 'contact' && (
@@ -147,7 +148,7 @@ export function InstantQuotePage() {
       )}
 
       {step === 'confirmed' && confirmation && (
-        <div className="quote-form text-center flex flex-col gap-3 items-center">
+        <Box className="quote-form" sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
           <h2 className="font-heading text-xl font-semibold">Quote request received</h2>
           <p className="text-sm text-muted-foreground">
             Reference <span className="font-numeric font-semibold text-foreground">{confirmation.quoteNo}</span> — valid until{' '}
@@ -159,8 +160,8 @@ export function InstantQuotePage() {
           <Button variant="outline" onClick={startOver}>
             Start a new quote
           </Button>
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }

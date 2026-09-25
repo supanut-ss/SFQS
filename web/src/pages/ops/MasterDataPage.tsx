@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Box from '@mui/material/Box'
 import { Badge, Button, ConfirmDialog, Dialog, EmptyState, Input, Select, SegmentedControl, Skeleton, Table, useToast } from '../../components/ui'
 import { ApiError } from '../../lib/api'
 import { useRouter } from '../../lib/useRouter'
@@ -18,7 +19,7 @@ export function MasterDataPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-4xl">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: 1024 }}>
       <h2 className="font-heading text-lg font-semibold">Master data</h2>
       <SegmentedControl
         label="Master data section"
@@ -35,7 +36,7 @@ export function MasterDataPage() {
       {tab === 'carriers' && <CarriersTab />}
       {tab === 'currencies' && <CurrenciesTab />}
       {tab === 'users' && <UsersTab />}
-    </div>
+    </Box>
   )
 }
 
@@ -188,7 +189,7 @@ function PortsTab() {
               setErrors((prev) => ({ ...prev, name: '' }))
             }}
           />
-          <div className="form-row">
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
             <Input
               label="City"
               error={errors.city}
@@ -207,7 +208,7 @@ function PortsTab() {
                 setErrors((prev) => ({ ...prev, country: '' }))
               }}
             />
-          </div>
+          </Box>
           <Select
             label="Type"
             options={[{ value: 'sea', label: 'Sea' }, { value: 'air', label: 'Air' }]}

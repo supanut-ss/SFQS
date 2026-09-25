@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Box from '@mui/material/Box'
 import { Button, Dialog, Input, Select } from '../../components/ui'
 import type { ChargeCalcBasis, ChargeSide, Currency, LocalCharge, Port, ShipmentDirection, TransportMode } from './types'
 
@@ -129,8 +130,8 @@ export function LocalChargeFormDialog({ open, onClose, onSubmit, ports, currenci
 
   return (
     <Dialog open={open} onClose={onClose} title={editing ? 'Edit local charge' : 'New local charge'}>
-      <div className="flex flex-col gap-4">
-        <div className="form-row">
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
           <Select
             label="Mode"
             options={[
@@ -153,8 +154,8 @@ export function LocalChargeFormDialog({ open, onClose, onSubmit, ports, currenci
             value={values.direction}
             onChange={(e) => setValues({ ...values, direction: e.target.value as ShipmentDirection })}
           />
-        </div>
-        <div className="form-row">
+        </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
           <Select
             label="Port"
             placeholder="Select port"
@@ -175,7 +176,7 @@ export function LocalChargeFormDialog({ open, onClose, onSubmit, ports, currenci
             value={values.chargeSide}
             onChange={(e) => setValues({ ...values, chargeSide: e.target.value as ChargeSide })}
           />
-        </div>
+        </Box>
         <Input
           label="Charge type"
           placeholder="THC, D/O, CFS, ..."
@@ -199,7 +200,7 @@ export function LocalChargeFormDialog({ open, onClose, onSubmit, ports, currenci
 
         {values.calcBasis !== 'notQuotable' && (
           <>
-            <div className="form-row">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
               <Input
                 label="Amount min"
                 type="number"
@@ -222,7 +223,7 @@ export function LocalChargeFormDialog({ open, onClose, onSubmit, ports, currenci
                   clearError('amountMax')
                 }}
               />
-            </div>
+            </Box>
             <Input
               label="Minimum charge (optional floor)"
               type="number"
@@ -256,7 +257,7 @@ export function LocalChargeFormDialog({ open, onClose, onSubmit, ports, currenci
             {submitting ? 'Saving…' : 'Save'}
           </Button>
         </div>
-      </div>
+      </Box>
     </Dialog>
   )
 }
