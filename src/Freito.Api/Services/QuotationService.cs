@@ -520,19 +520,16 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
 
     private static IEnumerable<QuotationLine> BuildLines(int quotationId, QuoteCalculationResponse computation)
     {
-        if (computation.RateFound)
+        yield return new QuotationLine
         {
-            yield return new QuotationLine
-            {
-                QuotationId = quotationId,
-                Description = "Freight",
-                Basis = computation.RateSource.ToString(),
-                UnitPrice = computation.FreightCost,
-                Qty = 1,
-                Amount = computation.FreightCost,
-                Currency = computation.QuoteCurrency,
-            };
-        }
+            QuotationId = quotationId,
+            Description = "Freight",
+            Basis = computation.RateFound ? computation.RateSource.ToString() : RateSource.Manual.ToString(),
+            UnitPrice = computation.RateFound ? computation.FreightCost : 0,
+            Qty = 1,
+            Amount = computation.FreightCost,
+            Currency = computation.QuoteCurrency,
+        };
 
         foreach (var line in computation.LocalChargeLines.Where(l => !l.IsNotQuotable))
         {
