@@ -104,7 +104,7 @@ public sealed class QuoteLineItemDto
     public int? Id { get; init; }
     [Required, StringLength(200)]
     public string Description { get; init; } = string.Empty;
-    [StringLength(100)]
+    [StringLength(80)]
     public string Basis { get; init; } = string.Empty;
     public decimal UnitPrice { get; init; }
     public decimal Qty { get; init; } = 1;

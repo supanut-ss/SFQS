@@ -610,6 +610,7 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                       <td className="py-2 px-2">
                         <input
                           className="input py-1 px-2 text-sm w-full"
+                          maxLength={80}
                           value={line.basis}
                           onChange={(e) => updateLine(idx, { basis: e.target.value })}
                           placeholder="Basis (e.g. Per shipment)"

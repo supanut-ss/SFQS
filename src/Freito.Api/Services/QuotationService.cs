@@ -45,10 +45,18 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
             case TransportMode.Lcl:
                 if (request.Cbm is null) errors.Add("LCL requires CBM.");
                 if (request.WeightKg is null) errors.Add("LCL requires weight (kg).");
+                if (request.Cbm is decimal cbm && decimal.Round(cbm, 3) != cbm)
+                    errors.Add("CBM supports at most three decimal places.");
+                if (request.WeightKg is decimal lclWeight && decimal.Round(lclWeight, 3) != lclWeight)
+                    errors.Add("Weight supports at most three decimal places.");
                 break;
             case TransportMode.Air:
                 if (request.ActualWeightKg is null) errors.Add("Air requires actual weight (kg).");
                 if (request.VolumeCm3 is null) errors.Add("Air requires volume (cm3).");
+                if (request.ActualWeightKg is decimal airWeight && decimal.Round(airWeight, 3) != airWeight)
+                    errors.Add("Weight supports at most three decimal places.");
+                if (request.VolumeCm3 is decimal volume && decimal.Round(volume, 3) != volume)
+                    errors.Add("Volume supports at most three decimal places.");
                 break;
         }
 
@@ -197,7 +205,7 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
         db.Quotations.Add(quotation);
         await db.SaveChangesAsync(cancellationToken);
 
-        db.QuotationLines.AddRange(BuildLines(quotation.Id, computation));
+        db.QuotationLines.AddRange(BuildLines(quotation.Id, request, computation));
         db.QuotationStatusHistory.AddRange(
             new QuotationStatusHistory { QuotationId = quotation.Id, FromStatus = QuotationStatus.Draft, ToStatus = QuotationStatus.Draft, ActorUserId = null, At = now, Note = "Guest submission" },
             new QuotationStatusHistory { QuotationId = quotation.Id, FromStatus = QuotationStatus.Draft, ToStatus = QuotationStatus.PendingSaleApproval, ActorUserId = null, At = now, Note = "Queued for Sale approval" });
@@ -518,16 +526,21 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
         return new QuotationActionResult(QuotationActionOutcome.Success, quotation);
     }
 
-    private static IEnumerable<QuotationLine> BuildLines(int quotationId, QuoteCalculationResponse computation)
+    private static IEnumerable<QuotationLine> BuildLines(
+        int quotationId,
+        QuoteSubmitRequest request,
+        QuoteCalculationResponse computation)
     {
+        var manual = !computation.RateFound;
+        var freightAmount = manual ? 0 : computation.FreightCost;
         yield return new QuotationLine
         {
             QuotationId = quotationId,
             Description = "Freight",
-            Basis = computation.RateFound ? computation.RateSource.ToString() : RateSource.Manual.ToString(),
-            UnitPrice = computation.RateFound ? computation.FreightCost : 0,
+            Basis = manual ? ManualFreightBasis(request, computation) : computation.RateSource.ToString(),
+            UnitPrice = freightAmount,
             Qty = 1,
-            Amount = computation.FreightCost,
+            Amount = freightAmount,
             Currency = computation.QuoteCurrency,
         };
 
@@ -544,6 +557,19 @@ public sealed class QuotationService(FreitoDbContext db, AuditLogWriter audit)
                 Currency = line.Currency,
             };
         }
+    }
+
+    private static string ManualFreightBasis(QuoteSubmitRequest request, QuoteCalculationResponse computation)
+    {
+        static string Format(decimal? value) => value?.ToString("0.###", CultureInfo.InvariantCulture) ?? "-";
+
+        return request.Mode switch
+        {
+            TransportMode.Fcl => $"Manual / FCL {request.ContainerSize?.Trim().ToUpperInvariant() ?? "-"} x {request.ContainerQty} containers",
+            TransportMode.Lcl => $"Manual / LCL {Format(request.Cbm)} CBM; {Format(request.WeightKg)} kg; {Format(computation.RevenueTon)} RT",
+            TransportMode.Air => $"Manual / Air {Format(request.ActualWeightKg)} kg; {Format(request.VolumeCm3)} cm3; {Format(computation.ChargeableWeightKg)} kg billed",
+            _ => RateSource.Manual.ToString(),
+        };
     }
 
     private async Task<IReadOnlyList<FreightAlternativeDto>> ResolveAlternativesAsync(

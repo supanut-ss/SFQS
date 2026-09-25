@@ -73,7 +73,7 @@ web/                   React + Vite + TypeScript (import tokens.css ตรง)
 1. กรอง `freight_rates` ที่ตรง origin + destination + mode + direction + `is_active` + `ready_date` อยู่ในช่วง valid_from..valid_to
 2. กรองตามขนาดตู้ (FCL) หรือ weight break ที่ครอบ chargeable weight (Air)
 3. เจอหลายรายการ → normalize เป็นสกุลฐานด้วย exchange rate ล่าสุด แล้ว **เลือกราคาต่ำสุด** และคืนรายการที่เหลือให้ Sale เลือกเปลี่ยน carrier ได้
-4. ไม่เจอเลย → ไม่บล็อก แต่ตอบ `NoRateFound` + ให้ Sale กรอกราคาเอง (`rate_source = Manual`) และ flag ให้ Operation รู้ว่าเส้นทางนี้ยังไม่มี rate; เมื่อ guest submit ให้สร้าง line `Freight` แบบ `Manual` ยอด 0 ไว้ในใบเสนอราคา เพื่อให้ Sale/Admin แก้ยอดได้ในขั้น review
+4. ไม่เจอเลย → ไม่บล็อก แต่ตอบ `NoRateFound` + ให้ Sale กรอกราคาเอง (`rate_source = Manual`) และ flag ให้ Operation รู้ว่าเส้นทางนี้ยังไม่มี rate; เมื่อ guest submit ให้สร้าง line `Freight` แบบ `Manual` ยอด 0 โดยใส่รายละเอียดที่ลูกค้ากรอก (เช่น container size/จำนวนตู้, CBM/น้ำหนัก หรือ Air น้ำหนัก/ปริมาตร) ใน basis เพื่อให้ Sale/Admin แก้ยอดได้ในขั้น review
    - **สำหรับ Air**: path นี้ไม่ใช่ edge case แต่เป็น**เส้นทางหลักที่คาดว่าจะเกิดบ่อย** — ยืนยันจาก Operation ว่า chargeable weight เกิน 500 kg ไม่มี rate table ตายตัว ต้องให้ Sale กรอกเองเสมอ (ดู §3 ด้านล่าง)
 
 **สูตร**
