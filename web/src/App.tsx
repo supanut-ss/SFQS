@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import LightModeIcon from '@mui/icons-material/LightMode'
+import DarkModeIcon from '@mui/icons-material/DarkMode'
 import { InstantQuotePage } from './pages/quote/InstantQuotePage'
 import { OpsApp } from './pages/ops/OpsApp'
 import { useRouter } from './lib/useRouter'
@@ -36,10 +38,10 @@ function App() {
       <button
         type="button"
         onClick={toggleMode}
-        aria-label="Toggle dark mode"
-        className="absolute top-4 right-4 text-xs px-3 py-1.5 rounded-full border border-border text-foreground hover:bg-muted"
+        aria-label={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        className="absolute top-4 right-4 size-9 flex items-center justify-center rounded-full border border-border text-foreground hover:bg-muted"
       >
-        {mode === 'dark' ? '☀️ Light' : '🌙 Dark'}
+        {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
       </button>
       <img src="/logo-icon.png" alt="Freito logo" className="h-10 w-auto" />
       <h1 className="font-heading text-2xl font-semibold">Freito</h1>

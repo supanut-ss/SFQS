@@ -1,7 +1,22 @@
 import { useState } from 'react'
 import Box from '@mui/material/Box'
+import DirectionsBoatFilledIcon from '@mui/icons-material/DirectionsBoatFilled'
+import FlightIcon from '@mui/icons-material/Flight'
+import Inventory2Icon from '@mui/icons-material/Inventory2'
+import CreditCardIcon from '@mui/icons-material/CreditCard'
+import ShieldIcon from '@mui/icons-material/Shield'
+import DescriptionIcon from '@mui/icons-material/Description'
 import { Button, Input } from '../../components/ui'
 import type { QuotationDimensionItem } from './types'
+
+function TransitIcon() {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      <DirectionsBoatFilledIcon fontSize="inherit" />
+      <FlightIcon fontSize="inherit" />
+    </span>
+  )
+}
 
 export interface ModularSectionsState {
   showSchedule: boolean
@@ -129,7 +144,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                       setDropdownOpen(false)
                     }}
                   >
-                    <span>🚢 / ✈️</span>
+                    <TransitIcon />
                     <span>Transit & Schedule</span>
                   </button>
                 )}
@@ -148,7 +163,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                       setDropdownOpen(false)
                     }}
                   >
-                    <span>📦</span>
+                    <Inventory2Icon fontSize="inherit" />
                     <span>Cargo Dimensions & Packing</span>
                   </button>
                 )}
@@ -161,7 +176,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                       setDropdownOpen(false)
                     }}
                   >
-                    <span>💳</span>
+                    <CreditCardIcon fontSize="inherit" />
                     <span>Payment & Credit Terms</span>
                   </button>
                 )}
@@ -174,7 +189,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                       setDropdownOpen(false)
                     }}
                   >
-                    <span>🛡️</span>
+                    <ShieldIcon fontSize="inherit" />
                     <span>Cargo Insurance</span>
                   </button>
                 )}
@@ -192,7 +207,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                       setDropdownOpen(false)
                     }}
                   >
-                    <span>📝</span>
+                    <DescriptionIcon fontSize="inherit" />
                     <span>Terms & Conditions / Disclaimer</span>
                   </button>
                 )}
@@ -212,7 +227,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
         <div className="border border-border/80 rounded-md p-3 bg-muted/15 flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <span>🚢 / ✈️</span>
+              <TransitIcon />
               <span>Routing, Carrier & Schedule</span>
             </span>
             {editable && (
@@ -297,7 +312,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
         <div className="border border-border/80 rounded-md p-3 bg-muted/15 flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <span>📦</span>
+              <Inventory2Icon fontSize="inherit" />
               <span>Cargo Dimensions & Packing Details</span>
             </span>
             {editable && (
@@ -447,7 +462,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
             <div className="border border-border/80 rounded-md p-3 bg-muted/15 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <span>💳</span>
+                  <CreditCardIcon fontSize="inherit" />
                   <span>Payment & Credit Terms</span>
                 </span>
                 {editable && (
@@ -491,7 +506,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
             <div className="border border-border/80 rounded-md p-3 bg-muted/15 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <span>🛡️</span>
+                  <ShieldIcon fontSize="inherit" />
                   <span>Cargo Insurance</span>
                 </span>
                 {editable && (
@@ -538,7 +553,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
         <div className="border border-border/80 rounded-md p-3 bg-muted/15 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <span>📝</span>
+              <DescriptionIcon fontSize="inherit" />
               <span>Terms & Conditions / Disclaimer</span>
             </span>
             {editable && (
