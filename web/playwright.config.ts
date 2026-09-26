@@ -3,7 +3,8 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  globalSetup: './e2e/global-setup.ts',
+  reporter: process.env.CI ? [['github'], ['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'retain-on-failure',
@@ -13,7 +14,7 @@ export default defineConfig({
       command: 'dotnet run --project ../src/Freito.Api --no-launch-profile',
       url: 'http://localhost:5025/api/health',
       reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
+      timeout: 120_000,
     },
     {
       command: 'npm run dev',
