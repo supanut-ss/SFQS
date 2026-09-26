@@ -31,7 +31,7 @@ jobs:
           --health-retries 10
 
     env:
-      ConnectionStrings__Default: "Server=127.0.0.1;Port=3306;Database=freito_dev;User=root;Password=freito_dev;"
+      ConnectionStrings__Default: "Server=127.0.0.1;Port=3306;Database=freito_dev;User=root;Password=freito_dev;AllowPublicKeyRetrieval=True;"
       Jwt__Key: "ci-only-jwt-signing-key-not-for-production-use-change-me-32bytes+"
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: "http://localhost:5025"
@@ -50,7 +50,9 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Install dotnet-ef
-        run: dotnet tool install --global dotnet-ef
+        run: |
+          dotnet tool install --global dotnet-ef
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Apply database migrations
         run: >-
@@ -61,16 +63,6 @@ jobs:
       - name: dotnet test
         run: dotnet test src/Freito.slnx
 
-      - name: Start API
-        run: |
-          dotnet run --project src/Freito.Api --no-launch-profile &
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:5025/api/health && exit 0
-            sleep 1
-          done
-          echo "API failed to become healthy" >&2
-          exit 1
-
       - name: Install web dependencies
         working-directory: web
         run: npm ci
@@ -79,9 +71,29 @@ jobs:
         working-directory: web
         run: npx playwright install --with-deps chromium
 
+      - name: Start API
+        run: |
+          (dotnet run --project src/Freito.Api --no-launch-profile > /tmp/api.log 2>&1 < /dev/null &)
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5025/api/health; then
+              echo "API is healthy"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API failed to become healthy. Logs:" >&2
+          cat /tmp/api.log >&2
+          exit 1
+
       - name: Run e2e tests
         working-directory: web
         run: npm run e2e
+
+      - name: Dump API logs on failure
+        if: failure()
+        run: |
+          echo "=== API LOGS ==="
+          cat /tmp/api.log || true
 
       - name: Upload Playwright report
         if: always()
