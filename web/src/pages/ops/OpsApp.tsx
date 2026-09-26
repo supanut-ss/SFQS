@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import Box from '@mui/material/Box'
+import Tabs from '@mui/material/Tabs'
+import Tab from '@mui/material/Tab'
 import { Badge, Button, Skeleton } from '../../components/ui'
 import { useAuth } from '../../lib/useAuth'
 import { useRouter } from '../../lib/useRouter'
@@ -66,15 +68,17 @@ export function OpsApp() {
         </Button>
       </Box>
 
-      <Box component="nav" sx={{ width: '100%', maxWidth: 1024, display: 'flex', gap: 1, borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
-        {canSeeSale && <TabLink active={activeTab === 'quotations'} onClick={() => navigate('/ops/quotations')} label="Quotations" />}
-        {canSeeOperation && (
-          <>
-            <TabLink active={activeTab === 'rates'} onClick={() => navigate('/ops/rates')} label="Rates" />
-            <TabLink active={activeTab === 'local-charges'} onClick={() => navigate('/ops/local-charges')} label="Local charges" />
-          </>
-        )}
-        {canSeeAdmin && <TabLink active={activeTab === 'master-data'} onClick={() => navigate('/ops/master-data')} label="Master data" />}
+      <Box sx={{ width: '100%', maxWidth: 1024, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, value: OpsTab) => navigate(`/ops/${value}`)}
+          aria-label="Operation area sections"
+        >
+          {canSeeSale && <Tab value="quotations" label="Quotations" />}
+          {canSeeOperation && <Tab value="rates" label="Rates" />}
+          {canSeeOperation && <Tab value="local-charges" label="Local charges" />}
+          {canSeeAdmin && <Tab value="master-data" label="Master data" />}
+        </Tabs>
       </Box>
 
       {activeTab === 'quotations' && canSeeSale && <QuotationsPage />}
@@ -82,21 +86,5 @@ export function OpsApp() {
       {activeTab === 'local-charges' && canSeeOperation && <LocalChargeManagementPage />}
       {activeTab === 'master-data' && canSeeAdmin && <MasterDataPage />}
     </Box>
-  )
-}
-
-function TabLink({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="px-3 py-2 text-sm font-semibold"
-      style={{
-        color: active ? 'var(--color-primary)' : 'var(--color-muted-foreground)',
-        borderBottom: active ? '2px solid var(--color-primary)' : '2px solid transparent',
-      }}
-    >
-      {label}
-    </button>
   )
 }

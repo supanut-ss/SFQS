@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
-import { EmptyState, Select, Skeleton, Table } from '../../components/ui'
+import { Button, EmptyState, Select, Skeleton, Table } from '../../components/ui'
 import { ApiError, api } from '../../lib/api'
 import { formatMoney } from '../../lib/format'
 import { StatusBadge } from './statusBadge'
@@ -91,9 +91,9 @@ export function QuotationInboxPage({ onSelect }: QuotationInboxPageProps) {
               key: 'actions',
               header: '',
               render: (q: Quotation) => (
-                <button type="button" className="text-sm underline text-primary" onClick={() => onSelect(q.id)}>
+                <Button type="button" variant="link" className="text-sm text-primary" onClick={() => onSelect(q.id)}>
                   View
-                </button>
+                </Button>
               ),
             },
           ]}

@@ -211,9 +211,10 @@ export function RateManagementPage() {
             Showing {visibleRates.length} of {rates.items.length} rates
           </span>
           {hasFilterActive && (
-            <button
+            <Button
               type="button"
-              className="text-xs text-primary underline"
+              variant="link"
+              className="text-xs text-primary"
               onClick={() => {
                 setSearch('')
                 setModeFilter('all')
@@ -222,7 +223,7 @@ export function RateManagementPage() {
               }}
             >
               Reset filters
-            </button>
+            </Button>
           )}
         </div>
       </Box>

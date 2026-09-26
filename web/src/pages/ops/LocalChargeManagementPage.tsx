@@ -186,9 +186,10 @@ export function LocalChargeManagementPage() {
             Showing {visibleCharges.length} of {charges.items.length} local charges
           </span>
           {hasFilterActive && (
-            <button
+            <Button
               type="button"
-              className="text-xs text-primary underline"
+              variant="link"
+              className="text-xs text-primary"
               onClick={() => {
                 setSearch('')
                 setModeFilter('all')
@@ -197,7 +198,7 @@ export function LocalChargeManagementPage() {
               }}
             >
               Reset filters
-            </button>
+            </Button>
           )}
         </div>
       </Box>

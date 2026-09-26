@@ -1,7 +1,16 @@
 import type { ButtonHTMLAttributes } from 'react'
 import { cn } from '../../lib/cn'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'outline-destructive' | 'destructive' | 'success'
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'outline-destructive'
+  | 'destructive'
+  | 'success'
+  | 'ghost'
+  | 'link'
+  | 'link-destructive'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
@@ -14,6 +23,9 @@ const variantClass: Record<ButtonVariant, string> = {
   'outline-destructive': 'btn-outline-destructive',
   destructive: 'btn-destructive',
   success: 'btn-success',
+  ghost: 'btn-ghost',
+  link: 'btn-link',
+  'link-destructive': 'btn-link-destructive',
 }
 
 /** design-system-spec.md "Button" + "Sale Approval" actions (success/outline-destructive). */

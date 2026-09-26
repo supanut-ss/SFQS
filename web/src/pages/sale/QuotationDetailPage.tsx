@@ -394,9 +394,9 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-3xl">
-      <button type="button" className="text-sm underline text-muted-foreground self-start" onClick={onBack}>
+      <Button type="button" variant="link" className="text-sm text-muted-foreground self-start" onClick={onBack}>
         ← Back to inbox
-      </button>
+      </Button>
 
       <div className="flex items-center justify-between">
         <h2 className="font-heading text-lg font-semibold text-balance">{quotation.quoteNo}</h2>
@@ -635,14 +635,15 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
                         />
                       </td>
                       <td className="py-2 px-1 text-center">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
                           className="text-destructive hover:opacity-80 p-1 text-base font-bold leading-none"
                           onClick={() => removeLine(idx)}
-                          title="Remove line"
+                          aria-label="Remove line"
                         >
                           ✕
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}

@@ -235,9 +235,10 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
               <span>Routing, Carrier & Schedule</span>
             </span>
             {editable && (
-              <button
+              <Button
                 type="button"
-                className="text-xs text-destructive hover:underline"
+                variant="link-destructive"
+                className="text-xs"
                 onClick={() =>
                   onChange({
                     showSchedule: false,
@@ -249,7 +250,7 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                 }
               >
                 Remove
-              </button>
+              </Button>
             )}
           </div>
 
@@ -320,13 +321,14 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
               <span>Cargo Dimensions & Packing Details</span>
             </span>
             {editable && (
-              <button
+              <Button
                 type="button"
-                className="text-xs text-destructive hover:underline"
+                variant="link-destructive"
+                className="text-xs"
                 onClick={() => onChange({ showDimensions: false, dimensionItems: [] })}
               >
                 Remove
-              </button>
+              </Button>
             )}
           </div>
 
@@ -419,13 +421,15 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                       <td className="py-1 px-2 text-right font-numeric">{itemCbm.toFixed(3)} m³</td>
                       {editable && (
                         <td className="py-1 px-1 text-center">
-                          <button
+                          <Button
                             type="button"
-                            className="text-destructive font-bold hover:opacity-80"
+                            variant="ghost"
+                            aria-label="Remove row"
+                            className="text-destructive font-bold hover:opacity-80 p-0.5"
                             onClick={() => removeDimensionRow(idx)}
                           >
                             ✕
-                          </button>
+                          </Button>
                         </td>
                       )}
                     </tr>
@@ -470,13 +474,14 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                   <span>Payment & Credit Terms</span>
                 </span>
                 {editable && (
-                  <button
+                  <Button
                     type="button"
-                    className="text-xs text-destructive hover:underline"
+                    variant="link-destructive"
+                    className="text-xs"
                     onClick={() => onChange({ showPayment: false, paymentTerms: '' })}
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
               </div>
               {editable ? (
@@ -514,13 +519,14 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
                   <span>Cargo Insurance</span>
                 </span>
                 {editable && (
-                  <button
+                  <Button
                     type="button"
-                    className="text-xs text-destructive hover:underline"
+                    variant="link-destructive"
+                    className="text-xs"
                     onClick={() => onChange({ showInsurance: false, insuranceStatus: '' })}
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
               </div>
               {editable ? (
@@ -561,13 +567,14 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
               <span>Terms & Conditions / Disclaimer</span>
             </span>
             {editable && (
-              <button
+              <Button
                 type="button"
-                className="text-xs text-destructive hover:underline"
+                variant="link-destructive"
+                className="text-xs"
                 onClick={() => onChange({ showTerms: false, termsAndConditions: '' })}
               >
                 Remove
-              </button>
+              </Button>
             )}
           </div>
 

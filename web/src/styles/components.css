@@ -115,6 +115,36 @@
 .btn-success:hover:not(:disabled) {
   background: var(--button-success-hover-bg);
 }
+.btn-ghost {
+  background: transparent;
+  color: var(--color-foreground);
+  padding: 0.25rem 0.5rem;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-muted);
+}
+.btn-link {
+  background: transparent;
+  color: var(--color-foreground);
+  padding: 0;
+  text-decoration: underline;
+  font-weight: 400;
+}
+.btn-link:hover:not(:disabled) {
+  background: transparent;
+  opacity: 0.8;
+}
+.btn-link-destructive {
+  background: transparent;
+  color: var(--color-destructive);
+  padding: 0;
+  text-decoration: underline;
+  font-weight: 400;
+}
+.btn-link-destructive:hover:not(:disabled) {
+  background: transparent;
+  opacity: 0.8;
+}
 
 .input,
 .select {
