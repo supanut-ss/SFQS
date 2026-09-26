@@ -1,11 +1,16 @@
-import { useState } from 'react'
+import { useState, type MouseEvent } from 'react'
 import Box from '@mui/material/Box'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
 import DirectionsBoatFilledIcon from '@mui/icons-material/DirectionsBoatFilled'
 import FlightIcon from '@mui/icons-material/Flight'
 import Inventory2Icon from '@mui/icons-material/Inventory2'
 import CreditCardIcon from '@mui/icons-material/CreditCard'
 import ShieldIcon from '@mui/icons-material/Shield'
 import DescriptionIcon from '@mui/icons-material/Description'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { Button, Input } from '../../components/ui'
 import type { QuotationDimensionItem } from './types'
 
@@ -66,7 +71,9 @@ const INSURANCE_PRESETS = [
 ]
 
 export function ModularQuotationSections({ editable, data, onChange }: ModularQuotationSectionsProps) {
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+  const menuOpen = Boolean(menuAnchor)
+  const closeMenu = () => setMenuAnchor(null)
 
   // Dimensions calculations
   const totalQty = data.dimensionItems.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)
@@ -119,105 +126,102 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
             </p>
           </div>
 
-          <div className="relative">
+          <div>
             <Button
               type="button"
               variant="outline"
               className="text-xs py-1 px-3 flex items-center gap-1.5"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={(e: MouseEvent<HTMLElement>) => setMenuAnchor(e.currentTarget)}
             >
               <span>+ Add Section</span>
-              <span className="text-[10px]">▼</span>
+              <ArrowDropDownIcon fontSize="inherit" />
             </Button>
 
-            {dropdownOpen && (
-              <div
-                className="absolute right-0 mt-1 w-64 bg-card border border-border rounded-md shadow-lg py-1 z-30 flex flex-col text-xs"
-                onMouseLeave={() => setDropdownOpen(false)}
-              >
-                {!data.showSchedule && (
-                  <button
-                    type="button"
-                    className="text-left px-3 py-2 hover:bg-muted transition-colors flex items-center gap-2"
-                    onClick={() => {
-                      onChange({ showSchedule: true })
-                      setDropdownOpen(false)
-                    }}
-                  >
+            <Menu anchorEl={menuAnchor} open={menuOpen} onClose={closeMenu} slotProps={{ paper: { className: 'text-xs' } }}>
+              {!data.showSchedule && (
+                <MenuItem
+                  onClick={() => {
+                    onChange({ showSchedule: true })
+                    closeMenu()
+                  }}
+                >
+                  <ListItemIcon>
                     <TransitIcon />
-                    <span>Transit & Schedule</span>
-                  </button>
-                )}
-                {!data.showDimensions && (
-                  <button
-                    type="button"
-                    className="text-left px-3 py-2 hover:bg-muted transition-colors flex items-center gap-2"
-                    onClick={() => {
-                      onChange({
-                        showDimensions: true,
-                        dimensionItems:
-                          data.dimensionItems.length > 0
-                            ? data.dimensionItems
-                            : [{ quantity: 1, lengthCm: 120, widthCm: 80, heightCm: 100, grossWeightKg: 250 }],
-                      })
-                      setDropdownOpen(false)
-                    }}
-                  >
-                    <Inventory2Icon fontSize="inherit" />
-                    <span>Cargo Dimensions & Packing</span>
-                  </button>
-                )}
-                {!data.showPayment && (
-                  <button
-                    type="button"
-                    className="text-left px-3 py-2 hover:bg-muted transition-colors flex items-center gap-2"
-                    onClick={() => {
-                      onChange({ showPayment: true, paymentTerms: data.paymentTerms || 'Credit 30 Days' })
-                      setDropdownOpen(false)
-                    }}
-                  >
-                    <CreditCardIcon fontSize="inherit" />
-                    <span>Payment & Credit Terms</span>
-                  </button>
-                )}
-                {!data.showInsurance && (
-                  <button
-                    type="button"
-                    className="text-left px-3 py-2 hover:bg-muted transition-colors flex items-center gap-2"
-                    onClick={() => {
-                      onChange({ showInsurance: true, insuranceStatus: data.insuranceStatus || 'Declined' })
-                      setDropdownOpen(false)
-                    }}
-                  >
-                    <ShieldIcon fontSize="inherit" />
-                    <span>Cargo Insurance</span>
-                  </button>
-                )}
-                {!data.showTerms && (
-                  <button
-                    type="button"
-                    className="text-left px-3 py-2 hover:bg-muted transition-colors flex items-center gap-2"
-                    onClick={() => {
-                      onChange({
-                        showTerms: true,
-                        termsAndConditions:
-                          data.termsAndConditions ||
-                          '• Rates based on standard service level and availability.\n• Items not specified do not include VAT.',
-                      })
-                      setDropdownOpen(false)
-                    }}
-                  >
-                    <DescriptionIcon fontSize="inherit" />
-                    <span>Terms & Conditions / Disclaimer</span>
-                  </button>
-                )}
-                {data.showSchedule && data.showDimensions && data.showPayment && data.showInsurance && data.showTerms && (
-                  <div className="px-3 py-2 text-muted-foreground italic text-center">
-                    All modular sections added
-                  </div>
-                )}
-              </div>
-            )}
+                  </ListItemIcon>
+                  <ListItemText>Transit & Schedule</ListItemText>
+                </MenuItem>
+              )}
+              {!data.showDimensions && (
+                <MenuItem
+                  onClick={() => {
+                    onChange({
+                      showDimensions: true,
+                      dimensionItems:
+                        data.dimensionItems.length > 0
+                          ? data.dimensionItems
+                          : [{ quantity: 1, lengthCm: 120, widthCm: 80, heightCm: 100, grossWeightKg: 250 }],
+                    })
+                    closeMenu()
+                  }}
+                >
+                  <ListItemIcon>
+                    <Inventory2Icon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Cargo Dimensions & Packing</ListItemText>
+                </MenuItem>
+              )}
+              {!data.showPayment && (
+                <MenuItem
+                  onClick={() => {
+                    onChange({ showPayment: true, paymentTerms: data.paymentTerms || 'Credit 30 Days' })
+                    closeMenu()
+                  }}
+                >
+                  <ListItemIcon>
+                    <CreditCardIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Payment & Credit Terms</ListItemText>
+                </MenuItem>
+              )}
+              {!data.showInsurance && (
+                <MenuItem
+                  onClick={() => {
+                    onChange({ showInsurance: true, insuranceStatus: data.insuranceStatus || 'Declined' })
+                    closeMenu()
+                  }}
+                >
+                  <ListItemIcon>
+                    <ShieldIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Cargo Insurance</ListItemText>
+                </MenuItem>
+              )}
+              {!data.showTerms && (
+                <MenuItem
+                  onClick={() => {
+                    onChange({
+                      showTerms: true,
+                      termsAndConditions:
+                        data.termsAndConditions ||
+                        '• Rates based on standard service level and availability.\n• Items not specified do not include VAT.',
+                    })
+                    closeMenu()
+                  }}
+                >
+                  <ListItemIcon>
+                    <DescriptionIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Terms & Conditions / Disclaimer</ListItemText>
+                </MenuItem>
+              )}
+              {data.showSchedule && data.showDimensions && data.showPayment && data.showInsurance && data.showTerms && (
+                <MenuItem disabled className="italic justify-center">
+                  All modular sections added
+                </MenuItem>
+              )}
+            </Menu>
           </div>
         </div>
       )}
