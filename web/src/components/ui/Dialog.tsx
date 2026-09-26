@@ -1,4 +1,7 @@
-import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import MuiDialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
 
 export interface DialogProps {
   open: boolean
@@ -7,68 +10,18 @@ export interface DialogProps {
   children: ReactNode
 }
 
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
-/** Modal dialog (design-system-spec.md tokens: dialog-*). Traps focus, closes on Escape or
- * overlay click, restores focus to the trigger on close — the baseline WAI-ARIA APG dialog
- * pattern, kept dependency-free since the primitive set has no modal library yet. */
+/** Modal dialog (design-system-spec.md tokens: dialog-*). Wraps MUI Dialog, which already
+ * implements the WAI-ARIA APG dialog pattern (focus trap, Escape/backdrop close, focus
+ * restoration on close) instead of hand-rolling it. */
 export function Dialog({ open, onClose, title, children }: DialogProps) {
-  const titleId = useId()
-  const panelRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<Element | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    triggerRef.current = document.activeElement
-    const panel = panelRef.current
-    const firstFocusable = panel?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
-    firstFocusable?.focus()
-
-    return () => {
-      if (triggerRef.current instanceof HTMLElement) triggerRef.current.focus()
-    }
-  }, [open])
-
-  if (!open) return null
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation()
-      onClose()
-      return
-    }
-
-    if (event.key !== 'Tab' || !panelRef.current) return
-    const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-    if (focusable.length === 0) return
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
-
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault()
-      last.focus()
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault()
-      first.focus()
-    }
-  }
-
   return (
-    <div className="dialog-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
-      <div
-        ref={panelRef}
-        className="dialog-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2 id={titleId} className="dialog-title">
-          {title}
-        </h2>
-        {children}
-      </div>
-    </div>
+    <MuiDialog
+      open={open}
+      onClose={onClose}
+      slotProps={{ paper: { className: 'dialog-panel' } }}
+    >
+      <DialogTitle className="dialog-title">{title}</DialogTitle>
+      <DialogContent>{children}</DialogContent>
+    </MuiDialog>
   )
 }

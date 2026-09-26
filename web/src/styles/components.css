@@ -305,16 +305,6 @@
   color: var(--segmented-active-fg);
 }
 
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--dialog-overlay-bg);
-  z-index: var(--dialog-overlay-z);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
 .dialog-panel {
   background: var(--dialog-bg);
   color: var(--dialog-fg);
