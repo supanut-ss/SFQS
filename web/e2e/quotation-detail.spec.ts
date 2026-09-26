@@ -12,8 +12,11 @@ async function loginAsAdmin(page: Page) {
 async function createQuotationViaInstantQuote(page: Page): Promise<string> {
   await page.goto('/#/quote')
 
-  await page.getByLabel('Origin *').selectOption({ label: 'Bangkok Port (THBKK)' })
-  await page.getByLabel('Destination *').selectOption({ label: 'Singapore Port (SGSIN)' })
+  const originOption = page.getByLabel('Origin *').locator('option', { hasText: 'THBKK' })
+  await page.getByLabel('Origin *').selectOption(await originOption.getAttribute('value') || '')
+
+  const destOption = page.getByLabel('Destination *').locator('option', { hasText: 'SGSIN' })
+  await page.getByLabel('Destination *').selectOption(await destOption.getAttribute('value') || '')
   await page.getByLabel('Incoterm *').selectOption({ value: 'FOB' })
   await page.getByLabel('Container size *').selectOption({ label: '20' })
   await page.getByLabel('Container quantity *').fill('1')
