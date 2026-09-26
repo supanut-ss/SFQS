@@ -49,14 +49,12 @@ jobs:
           cache: "npm"
           cache-dependency-path: web/package-lock.json
 
-      - name: Install dotnet-ef
-        run: |
-          dotnet tool install --global dotnet-ef
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+      - name: Restore dotnet tools
+        run: dotnet tool restore
 
       - name: Apply database migrations
         run: >-
-          dotnet ef database update
+          dotnet tool run dotnet-ef database update
           --project src/Freito.Infrastructure
           --startup-project src/Freito.Api
 
