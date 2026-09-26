@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from 'react'
+import { cn } from '../../lib/cn'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'outline-destructive' | 'destructive' | 'success'
 
@@ -17,5 +18,5 @@ const variantClass: Record<ButtonVariant, string> = {
 
 /** design-system-spec.md "Button" + "Sale Approval" actions (success/outline-destructive). */
 export function Button({ variant = 'primary', className = '', ...props }: ButtonProps) {
-  return <button className={`btn ${variantClass[variant]} ${className}`.trim()} {...props} />
+  return <button className={cn('btn', variantClass[variant], className)} {...props} />
 }
