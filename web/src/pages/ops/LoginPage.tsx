@@ -31,7 +31,7 @@ export function LoginPage() {
       onSubmit={handleSubmit}
       sx={{ maxWidth: 360, width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}
     >
-      <h2 className="font-heading text-lg font-semibold mb-1">Sign in</h2>
+      <h2 className="font-heading text-lg font-semibold mb-1 text-balance">Sign in</h2>
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
         <Input label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         <Input label="Password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />

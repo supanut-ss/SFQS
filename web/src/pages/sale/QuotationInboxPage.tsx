@@ -59,7 +59,7 @@ export function QuotationInboxPage({ onSelect }: QuotationInboxPageProps) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: 1024 }}>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr auto' }, gap: 2, alignItems: 'center' }}>
-        <h2 className="font-heading text-lg font-semibold">Quotation inbox</h2>
+        <h2 className="font-heading text-lg font-semibold text-balance">Quotation inbox</h2>
         <Box sx={{ minWidth: 220 }}>
           <Select
             label="Status"

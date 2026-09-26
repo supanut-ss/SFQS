@@ -297,7 +297,7 @@
   max-height: calc(100dvh - 2rem);
   overflow-y: auto;
 }
-.dialog-title { margin: 0 0 0.5rem; font-size: 1.125rem; font-weight: 700; }
+.dialog-title { margin: 0 0 0.5rem; font-size: 1.125rem; font-weight: 700; text-wrap: balance; }
 
 .toast-viewport {
   position: fixed;

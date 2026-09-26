@@ -140,7 +140,7 @@ export function RateManagementPage() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: 1024 }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-        <h2 className="font-heading text-lg font-semibold">Rate management</h2>
+        <h2 className="font-heading text-lg font-semibold text-balance">Rate management</h2>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
           <input
             ref={fileInputRef}

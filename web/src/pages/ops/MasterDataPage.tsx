@@ -20,7 +20,7 @@ export function MasterDataPage() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: 1024 }}>
-      <h2 className="font-heading text-lg font-semibold">Master data</h2>
+      <h2 className="font-heading text-lg font-semibold text-balance">Master data</h2>
       <SegmentedControl
         label="Master data section"
         value={tab}
@@ -465,7 +465,7 @@ function CurrenciesTab() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold text-sm">Currencies</h3>
+          <h3 className="font-semibold text-sm text-balance">Currencies</h3>
           <Button
             onClick={() => {
               setForm({ code: '', name: '', decimalDigits: 2 })
@@ -494,7 +494,7 @@ function CurrenciesTab() {
 
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold text-sm">Exchange rates (history — never overwritten)</h3>
+          <h3 className="font-semibold text-sm text-balance">Exchange rates (history — never overwritten)</h3>
           <Button
             onClick={() => {
               setRateForm({ currencyCode: '', rateToBase: '', effectiveDate: '' })

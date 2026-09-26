@@ -149,7 +149,7 @@ export function InstantQuotePage() {
 
       {step === 'confirmed' && confirmation && (
         <Box className="quote-form" sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
-          <h2 className="font-heading text-xl font-semibold">Quote request received</h2>
+          <h2 className="font-heading text-xl font-semibold text-balance">Quote request received</h2>
           <p className="text-sm text-muted-foreground">
             Reference <span className="font-numeric font-semibold text-foreground">{confirmation.quoteNo}</span> — valid until{' '}
             {new Date(confirmation.expiresAt).toLocaleDateString()}.

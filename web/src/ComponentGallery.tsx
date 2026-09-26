@@ -38,7 +38,7 @@ export function ComponentGallery() {
   return (
     <section className="flex flex-col gap-8 p-8 w-full max-w-3xl mx-auto">
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-3">Buttons</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-balance">Buttons</h2>
         <div className="flex flex-wrap gap-3 items-center">
           <Button>Default</Button>
           <Button disabled>Disabled</Button>
@@ -50,7 +50,7 @@ export function ComponentGallery() {
       </div>
 
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-3">Badges</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-balance">Badges</h2>
         <div className="flex flex-wrap gap-2">
           <Badge variant="import">Import</Badge>
           <Badge variant="export">Export</Badge>
@@ -66,7 +66,7 @@ export function ComponentGallery() {
       </div>
 
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-3">Segmented control</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-balance">Segmented control</h2>
         <SegmentedControl
           label="Transport mode"
           value={mode}
@@ -81,7 +81,7 @@ export function ComponentGallery() {
       </div>
 
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-3">Form fields</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-balance">Form fields</h2>
         <div className="grid grid-cols-2 gap-4 max-w-xl">
           <Input label="Customer name" placeholder="Somchai Exports" required />
           <Input label="Email" type="email" error="Enter a valid email address" defaultValue="not-an-email" />
@@ -99,7 +99,7 @@ export function ComponentGallery() {
       </div>
 
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-3">Table</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-balance">Table</h2>
         <div className="flex items-center gap-3 mb-2">
           <Button variant="outline" onClick={() => setShowEmptyTable((v) => !v)}>
             Toggle empty state
@@ -119,7 +119,7 @@ export function ComponentGallery() {
       </div>
 
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-3">Dialog &amp; Toast</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-balance">Dialog &amp; Toast</h2>
         <div className="flex gap-3">
           <Button onClick={() => setDialogOpen(true)}>Open dialog</Button>
           <Button variant="outline" onClick={() => toast.show('Rate saved successfully', 'success')}>
@@ -149,7 +149,7 @@ export function ComponentGallery() {
       </div>
 
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-3">Skeleton</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-balance">Skeleton</h2>
         <div className="flex flex-col gap-2 max-w-sm">
           <Skeleton height="1.25rem" width="60%" />
           <Skeleton height="1.25rem" />
@@ -158,7 +158,7 @@ export function ComponentGallery() {
       </div>
 
       <div>
-        <h2 className="font-heading text-lg font-semibold mb-3">Empty state</h2>
+        <h2 className="font-heading text-lg font-semibold mb-3 text-balance">Empty state</h2>
         <EmptyState
           title="No quotations yet"
           description="Guest submissions will show up here once they're queued for approval."

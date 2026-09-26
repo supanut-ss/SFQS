@@ -399,7 +399,7 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
       </button>
 
       <div className="flex items-center justify-between">
-        <h2 className="font-heading text-lg font-semibold">{quotation.quoteNo}</h2>
+        <h2 className="font-heading text-lg font-semibold text-balance">{quotation.quoteNo}</h2>
         <StatusBadge status={quotation.status} />
       </div>
 
@@ -580,7 +580,7 @@ export function QuotationDetailPage({ id, onBack }: QuotationDetailPageProps) {
         {canDecide ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Quotation Lines</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide text-balance">Quotation Lines</h3>
               <span className="text-xs text-muted-foreground">Sale can customize or add line items before approving</span>
             </div>
 

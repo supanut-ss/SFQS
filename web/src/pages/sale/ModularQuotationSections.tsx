@@ -118,10 +118,10 @@ export function ModularQuotationSections({ editable, data, onChange }: ModularQu
       {editable && (
         <div className="flex items-center justify-between flex-wrap gap-2 border-t border-border pt-3">
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide text-balance">
               Modular Sections (Optional)
             </h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground text-pretty">
               Selectively add specific details for this quotation before sending to the customer.
             </p>
           </div>

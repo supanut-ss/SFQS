@@ -121,7 +121,7 @@ export function LocalChargeManagementPage() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', maxWidth: 1024 }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-        <h2 className="font-heading text-lg font-semibold">Local charge management</h2>
+        <h2 className="font-heading text-lg font-semibold text-balance">Local charge management</h2>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
           <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && handleImport(e.target.files[0])} />
           <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
