@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import { ThemeProvider } from '@mui/material/styles'
 import { getTheme } from './theme'
 
@@ -18,26 +18,33 @@ export function useColorMode() {
   return useContext(ColorModeContext)
 }
 
+function applyMode(mode: ColorMode) {
+  document.documentElement.classList.toggle('dark', mode === 'dark')
+  localStorage.setItem(STORAGE_KEY, mode)
+}
+
 function getInitialMode(): ColorMode {
   const stored = localStorage.getItem(STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark') return stored
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  const mode = stored === 'light' || stored === 'dark' ? stored : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  // Apply eagerly so getTheme() reads the right tokens.css values on first render.
+  applyMode(mode)
+  return mode
 }
 
 export function ColorModeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<ColorMode>(getInitialMode)
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', mode === 'dark')
-    localStorage.setItem(STORAGE_KEY, mode)
-  }, [mode])
-
   const value = useMemo(
     () => ({
       mode,
-      toggleMode: () => setMode((prev) => (prev === 'light' ? 'dark' : 'light')),
+      toggleMode: () =>
+        setMode((prev) => {
+          const next = prev === 'light' ? 'dark' : 'light'
+          applyMode(next)
+          return next
+        }),
     }),
-    [mode],
+    [],
   )
 
   const theme = useMemo(() => getTheme(mode), [mode])
